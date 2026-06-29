@@ -1,14 +1,16 @@
-// Tiny Farm Village - Dynamic Audio System (BGM & Procedural SFX Synthesis)
+// Tiny Farm Village - Dynamic Audio System (BGM via YouTube & Procedural SFX Synthesis)
 
 class SoundManager {
     constructor() {
         this.audioCtx = null;
-        this.bgm = null;
-        this.bgmUrl = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3';
         this.isMuted = false;
-        this.bgmStarted = false;
         this.bgmVolume = 0.15; // Relaxing, low BGM volume
         this.sfxVolume = 0.1;  // Crisp, pleasant SFX volume
+        this.ytPlayer = null;
+        this.ytReady = false;
+        this.bgmShouldPlay = false;
+
+        this.initYoutubeAPI();
     }
 
     // Initialize Web Audio Context on first user action
@@ -21,36 +23,93 @@ class SoundManager {
         }
     }
 
+    // Load the YouTube Iframe Player API code asynchronously
+    initYoutubeAPI() {
+        // Expose callback globally so YouTube API can call it when ready
+        window.onYouTubeIframeAPIReady = () => {
+            this.initYoutubePlayer();
+        };
+
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        if (firstScriptTag && firstScriptTag.parentNode) {
+            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        } else {
+            document.head.appendChild(tag);
+        }
+    }
+
+    // Create the YouTube player object
+    initYoutubePlayer() {
+        try {
+            this.ytPlayer = new YT.Player('youtube-bgm-container', {
+                height: '1',
+                width: '1',
+                videoId: '5mxT40MnNi0',
+                playerVars: {
+                    'autoplay': 0,
+                    'loop': 1,
+                    'playlist': '5mxT40MnNi0', // Required for looping single video in YT player
+                    'controls': 0,
+                    'disablekb': 1,
+                    'fs': 0,
+                    'modestbranding': 1,
+                    'rel': 0,
+                    'showinfo': 0
+                },
+                events: {
+                    'onReady': (event) => {
+                        this.ytReady = true;
+                        // YouTube volume range is 0 to 100
+                        event.target.setVolume(this.isMuted ? 0 : this.bgmVolume * 100);
+                        if (this.bgmShouldPlay && !this.isMuted) {
+                            event.target.playVideo();
+                        }
+                    },
+                    'onStateChange': (event) => {
+                        // Fallback loop handling
+                        if (event.data === YT.PlayerState.ENDED) {
+                            event.target.playVideo();
+                        }
+                    }
+                }
+            });
+        } catch (e) {
+            console.warn("YouTube Player initialization failed:", e);
+        }
+    }
+
     // Initialize and play background music
     initBGM() {
-        if (this.bgmStarted) return;
         this.initAudioContext();
+        this.bgmShouldPlay = true;
+        this.playBGM();
+    }
 
-        try {
-            this.bgm = new Audio(this.bgmUrl);
-            this.bgm.loop = true;
-            this.bgm.volume = this.isMuted ? 0 : this.bgmVolume;
-            
-            // Handle play promise
-            const playPromise = this.bgm.play();
-            if (playPromise !== undefined) {
-                playPromise.then(() => {
-                    this.bgmStarted = true;
-                    console.log("BGM started successfully.");
-                }).catch(err => {
-                    console.log("Autoplay blocked or BGM failed to load. Will retry on next interaction.", err);
-                });
+    playBGM() {
+        if (this.ytReady && this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
+            if (!this.isMuted) {
+                this.ytPlayer.unMute();
+                this.ytPlayer.setVolume(this.bgmVolume * 100);
+                this.ytPlayer.playVideo();
             }
-        } catch (e) {
-            console.warn("BGM initialization failed:", e);
         }
     }
 
     // Toggle BGM mute status
     toggleMute() {
         this.isMuted = !this.isMuted;
-        if (this.bgm) {
-            this.bgm.volume = this.isMuted ? 0 : this.bgmVolume;
+        if (this.ytReady && this.ytPlayer) {
+            if (this.isMuted) {
+                if (typeof this.ytPlayer.mute === 'function') this.ytPlayer.mute();
+                if (typeof this.ytPlayer.pauseVideo === 'function') this.ytPlayer.pauseVideo();
+            } else {
+                if (typeof this.ytPlayer.unMute === 'function') this.ytPlayer.unMute();
+                if (typeof this.ytPlayer.setVolume === 'function') this.ytPlayer.setVolume(this.bgmVolume * 100);
+                this.bgmShouldPlay = true;
+                this.playBGM();
+            }
         }
         return this.isMuted;
     }

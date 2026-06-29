@@ -1371,3 +1371,14 @@ html, body {
     border-color: #34d399 !important;
 }
 
+#youtube-bgm-container {
+    position: absolute;
+    top: -1000px;
+    left: -1000px;
+    width: 1px;
+    height: 1px;
+    opacity: 0.001;
+    pointer-events: none;
+    z-index: -999;
+}
+
