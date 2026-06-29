@@ -213,6 +213,13 @@ export class LotterySystem {
         // Pad number string (e.g. "7" -> "07")
         const paddedNum = numStr.padStart(2, '0');
 
+        // Check if number already bought in this round
+        if (this.tickets.includes(paddedNum)) {
+            SaveSystem.showToast(`Bạn đã mua số ${paddedNum} rồi! Hãy chọn số khác. ❌`);
+            this.playSound('error');
+            return false;
+        }
+
         // Check if player has enough money (100 coins)
         if (inventoryInstance.getCoins() >= 100) {
             inventoryInstance.spendCoins(100);
