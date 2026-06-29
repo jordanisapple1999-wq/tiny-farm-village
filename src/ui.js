@@ -116,10 +116,10 @@ export class UIController {
             });
         }
 
-        // Reset Button
+        // Reset/Replay Button
         if (this.btnReset) {
             this.btnReset.addEventListener('click', () => {
-                const conf = confirm('Bạn có chắc muốn xóa tiến trình và chơi lại từ đầu không?');
+                const conf = confirm('Bạn có chắc muốn chơi lại từ đầu không? Toàn bộ tiến trình cũ sẽ được xóa và đặt lại.');
                 if (conf) {
                     SaveSystem.resetGame();
                 }

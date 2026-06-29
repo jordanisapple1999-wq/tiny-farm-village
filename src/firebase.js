@@ -12,6 +12,7 @@ import {
     doc, 
     getDoc, 
     setDoc, 
+    deleteDoc,
     serverTimestamp 
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 import { getFirebaseConfig, isFirebaseConfigured } from './firebaseConfig.js';
@@ -55,5 +56,6 @@ export {
     doc,
     getDoc,
     setDoc,
+    deleteDoc,
     serverTimestamp
 };

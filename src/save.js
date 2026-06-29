@@ -2,7 +2,7 @@
 
 import { inventoryInstance } from './inventory.js';
 import { lotteryInstance } from './lottery.js';
-import { auth, db, doc, getDoc, setDoc, serverTimestamp } from './firebase.js';
+import { auth, db, doc, getDoc, setDoc, deleteDoc, serverTimestamp } from './firebase.js';
 import { isFirebaseConfigured } from './firebaseConfig.js';
 import { soundManager } from './audio.js';
 
@@ -174,13 +174,20 @@ export class SaveSystem {
         return localStorage.getItem(SAVE_KEY) !== null;
     }
 
-    static resetGame() {
+    static async resetGame() {
         try {
             localStorage.removeItem(SAVE_KEY);
             lotteryInstance.resetState();
             
+            // Clear cloud save if logged in
+            if (isFirebaseConfigured() && auth && auth.currentUser) {
+                const userId = auth.currentUser.uid;
+                await deleteDoc(doc(db, "saves", userId));
+                console.log('Cloud save deleted.');
+            }
+
             soundManager.playSFX('save');
-            this.showToast('Đã xóa dữ liệu lưu! Game sẽ tải lại...', 1500);
+            this.showToast('Đang thiết lập lại và tải lại game... 🌾', 1500);
             setTimeout(() => {
                 window.location.reload();
             }, 1000);
