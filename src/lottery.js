@@ -229,6 +229,11 @@ export class LotterySystem {
             
             this.saveState();
             this.triggerUIUpdate();
+            
+            // Force game save immediately to write new coin balance to disk
+            if (window._phaserScene) {
+                SaveSystem.saveGame(window._phaserScene.player, window._phaserScene.farm);
+            }
             return true;
         } else {
             SaveSystem.showToast('Bạn không đủ vàng. 🪙❌');
@@ -249,6 +254,11 @@ export class LotterySystem {
         SaveSystem.showToast(`Đã hủy vé số ${num} (Hoàn lại 🪙100)`);
         this.saveState();
         this.triggerUIUpdate();
+        
+        // Force game save immediately to write new coin balance to disk
+        if (window._phaserScene) {
+            SaveSystem.saveGame(window._phaserScene.player, window._phaserScene.farm);
+        }
     }
 
     // --- Drawing numbers ---
