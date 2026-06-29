@@ -17,7 +17,7 @@ export class LotteryNPC extends NPC {
             {
                 speaker: this.npcName,
                 avatar: this.npcAvatar,
-                text: 'Một tấm vé chỉ 100 vàng nhưng cơ hội trúng Giải Đặc Biệt lên đến 100.000 vàng! Hệ thống quay số tự động 3 phút một lần.',
+                text: 'Một tấm vé chỉ 100 vàng nhưng cơ hội trúng Giải Đặc Biệt lên đến 10.000 vàng! Hệ thống quay số tự động 3 phút một lần.',
                 action: () => {
                     if (window._lotteryUI) {
                         window._lotteryUI.openLottery();

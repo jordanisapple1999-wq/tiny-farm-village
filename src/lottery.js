@@ -366,7 +366,7 @@ export class LotterySystem {
 
             if (ticket === winningNumbers.dacbiet) {
                 matchedPrize = 'Giải Đặc Biệt';
-                ticketReward = 100000;
+                ticketReward = 10000;
             } else if (ticket === winningNumbers.nhat) {
                 matchedPrize = 'Giải Nhất';
                 ticketReward = 500;
