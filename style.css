@@ -1382,3 +1382,19 @@ html, body {
     z-index: -999;
 }
 
+#game-copyright {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--wood-highlight);
+    opacity: 0.65;
+    text-shadow: 1px 1px 1px var(--wood-dark);
+    pointer-events: none;
+    z-index: 40;
+    white-space: nowrap;
+    font-family: var(--font-body);
+}
+
