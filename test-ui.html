@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>UI Test</title>
+<link rel="stylesheet" href="style.css">
+<style>
+    body { background: #3a6e22; margin: 0; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; font-family: sans-serif; }
+    .test-btn { padding: 10px 20px; cursor: pointer; font-size: 1rem; border-radius: 8px; border: 2px solid #333; background: #555; color: white; }
+    .label { color: white; font-weight: bold; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<!-- Toast (same as in game) -->
+<div id="toast-notification" class="toast-hidden"></div>
+
+<!-- Interaction Prompt (same as in game) -->
+<div id="interaction-prompt" style="position:relative; bottom:auto; left:auto; transform:none; animation:none;">
+    Nhấn <span class="key-hint">E</span> để <span id="interaction-action-text">Thu hoạch Cà rốt</span>
+</div>
+
+<div id="interaction-prompt-harvest" class="prompt-harvest" style="position:relative; bottom:auto; left:auto; transform:none; animation:none; display:flex; align-items:center; gap:8px; margin-top:10px;">
+    Nhấn <span class="key-hint">E</span> để <span>Thu hoạch Cà rốt 🥕 (harvest state)</span>
+</div>
+
+<div>
+    <p class="label">Test buttons:</p>
+    <button class="test-btn" onclick="showToast('Thu hoạch: 🥕 Cà rốt! +1', 'toast-harvest')">Toast: Thu hoạch (green)</button>
+    <button class="test-btn" onclick="showToast('Không có hạt giống Cà rốt để gieo! ❌', 'toast-error')">Toast: Lỗi (red)</button>
+    <button class="test-btn" onclick="showToast('Đã lưu game tự động! 💾', 'toast-save')">Toast: Lưu (blue)</button>
+    <button class="test-btn" onclick="showToast('Chào mừng đến Tiny Farm Village! 🌾')">Toast: Normal</button>
+</div>
+
+<script>
+function showToast(msg, cls) {
+    const t = document.getElementById('toast-notification');
+    t.textContent = msg;
+    t.classList.remove('toast-harvest','toast-error','toast-save','toast-hidden');
+    if (cls) t.classList.add(cls);
+    setTimeout(() => t.classList.add('toast-hidden'), 3000);
+}
+// Show one immediately
+showToast('Chào mừng đến Tiny Farm Village! 🌾');
+</script>
+</body>
+</html>
