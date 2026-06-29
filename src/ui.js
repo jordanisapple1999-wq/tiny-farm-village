@@ -21,6 +21,17 @@ export class UIController {
     constructor(scene) {
         this.scene = scene;
 
+        // Prevent Phaser key capture from hijacking input text fields (e.g. typing 'E', 'Space', arrow keys)
+        const stopInputPropagation = (e) => {
+            const tag = e.target ? e.target.tagName : '';
+            if (tag === 'INPUT' || tag === 'TEXTAREA') {
+                e.stopPropagation();
+            }
+        };
+        window.addEventListener('keydown', stopInputPropagation, { capture: true });
+        window.addEventListener('keyup', stopInputPropagation, { capture: true });
+        window.addEventListener('keypress', stopInputPropagation, { capture: true });
+
         // HUD Elements
         this.hudCoins = document.getElementById('hud-coins-value');
         this.hudSeedName = document.getElementById('hud-selected-seed-name');
