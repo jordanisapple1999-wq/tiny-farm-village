@@ -155,6 +155,7 @@ html, body {
 .cozy-btn.secondary  { background: linear-gradient(to bottom, #c4c9d4, #9ca3af); color: #1f2937; }
 .cozy-btn.danger     { background: linear-gradient(to bottom, #fb7185, var(--danger)); color: #fff; }
 .cozy-btn.green-btn  { background: linear-gradient(to bottom, var(--grass-light), var(--grass-dark)); color: #fff; text-shadow: 1px 1px 0 var(--wood-dark); }
+.cozy-btn.music-btn.muted { background: linear-gradient(to bottom, #f87171, #dc2626); color: #fff; text-shadow: 1px 1px 0 var(--wood-dark); }
 
 .btn-close-panel {
     width: 32px; height: 32px;

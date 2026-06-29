@@ -3,6 +3,7 @@
 import { CROPS } from './crop.js';
 import { inventoryInstance } from './inventory.js';
 import { SaveSystem } from './save.js';
+import { soundManager } from './audio.js';
 
 export class FarmPlot {
     constructor(scene, plotData) {
@@ -55,9 +56,11 @@ export class FarmPlot {
             this.stage = 1;
             
             this.updateVisual();
+            soundManager.playSFX('plant');
             SaveSystem.showToast(`Đã gieo Hạt giống ${CROPS[cropId].name}!  🌱`);
             return true;
         } else {
+            soundManager.playSFX('error');
             SaveSystem.showToast(`Bạn không có hạt giống ${CROPS[cropId].name} để gieo! ❌`);
             return false;
         }
@@ -71,6 +74,7 @@ export class FarmPlot {
             // Add crop to inventory
             const cropKey = `${this.cropId}_harvested`;
             inventoryInstance.addItem(cropKey, 1);
+            soundManager.playSFX('harvest');
             SaveSystem.showToast(`Thu hoạch: ${crop.icon} ${crop.name}! +1`);
 
             // Floating reward text at the plot

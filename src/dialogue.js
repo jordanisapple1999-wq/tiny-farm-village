@@ -1,5 +1,7 @@
 // Tiny Farm Village - Dialogue System
 
+import { soundManager } from './audio.js';
+
 export class DialogueSystem {
     constructor() {
         this.overlay = document.getElementById('dialogue-overlay');
@@ -112,9 +114,11 @@ export class DialogueSystem {
         if (this.isTyping) {
             // If typing, show all text instantly
             this.finishTyping();
+            soundManager.playSFX('dialogue_next');
         } else {
             // Otherwise, advance to next dialogue block
             this.currentIndex++;
+            soundManager.playSFX('dialogue_next');
             this.showCurrentDialogue();
         }
     }

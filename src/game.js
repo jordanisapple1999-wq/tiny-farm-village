@@ -13,6 +13,7 @@ import { shopInstance }  from './shop.js';
 import { LotteryManager } from './lotteryNPC.js';
 import { lotteryInstance } from './lottery.js';
 import { lotteryUIInstance } from './lotteryUI.js';
+import { soundManager } from './audio.js';
 
 class MainScene extends Phaser.Scene {
     constructor() {
@@ -72,6 +73,27 @@ class MainScene extends Phaser.Scene {
 
         // ── 10. HTML overlay UI ──
         this.ui = new UIController(this);
+
+        // Initialize BGM and Mute Control
+        const btnToggleMusic = document.getElementById('btn-toggle-music');
+        if (btnToggleMusic) {
+            btnToggleMusic.addEventListener('click', () => {
+                const muted = soundManager.toggleMute();
+                btnToggleMusic.classList.toggle('muted', muted);
+                btnToggleMusic.innerText = muted ? '🔇 Tắt Nhạc' : '🎵 Nhạc';
+                btnToggleMusic.blur();
+            });
+        }
+
+        // BGM Autoplay initialization on first user interaction (browser restriction bypass)
+        const startMusicOnInteraction = () => {
+            soundManager.initBGM();
+            // Remove listeners once BGM is initialized
+            document.removeEventListener('click', startMusicOnInteraction);
+            document.removeEventListener('keydown', startMusicOnInteraction);
+        };
+        document.addEventListener('click', startMusicOnInteraction);
+        document.addEventListener('keydown', startMusicOnInteraction);
 
         // Initialize Lottery System & UI
         lotteryInstance.init();

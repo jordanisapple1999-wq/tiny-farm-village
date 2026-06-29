@@ -2,9 +2,10 @@
 
 import { inventoryInstance } from './inventory.js';
 import { SaveSystem } from './save.js';
+import { soundManager } from './audio.js';
 
 const LOTTERY_SAVE_KEY = 'tiny_farm_lottery';
-const CYCLE_DURATION = 15; // 15 seconds for testing draw cycle
+const CYCLE_DURATION = 180; // 3 minutes cycle
 
 export class LotterySystem {
     constructor() {
@@ -39,6 +40,7 @@ export class LotterySystem {
     // --- Web Audio SFX Synthesis ---
     playSound(type) {
         try {
+            if (soundManager.isMuted) return; // Muted globally
             this.initAudio();
             if (!this.audioCtx) return;
 

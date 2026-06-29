@@ -3,6 +3,7 @@
 import { CROPS } from './crop.js';
 import { inventoryInstance } from './inventory.js';
 import { SaveSystem } from './save.js';
+import { soundManager } from './audio.js';
 import { dialogueInstance } from './dialogue.js';
 import { shopInstance } from './shop.js';
 import { lotteryUIInstance } from './lotteryUI.js';
@@ -56,6 +57,39 @@ export class UIController {
     }
 
     initEvents() {
+        // Global button click sound helper
+        document.addEventListener('click', (e) => {
+            const target = e.target;
+            if (target && (target.tagName === 'BUTTON' || target.closest('button') || target.classList.contains('inventory-slot'))) {
+                // Exclude buttons that play their own custom chimes (like buy, sell, save, claim)
+                const isCustomSoundButton = target.classList.contains('buy-btn') || 
+                                             target.classList.contains('sell-btn') || 
+                                             target.classList.contains('buy-expansion-btn') || 
+                                             target.classList.contains('lotto-buy-btn') || 
+                                             target.classList.contains('claim-btn') || 
+                                             target.id === 'btn-save-game' || 
+                                             target.id === 'btn-reset-game' || 
+                                             target.id === 'btn-submit-login' || 
+                                             target.id === 'btn-submit-register' || 
+                                             target.id === 'btn-submit-logout' || 
+                                             target.id === 'btn-cloud-sync-up' || 
+                                             target.id === 'btn-cloud-sync-down' || 
+                                             target.id === 'btn-save-config' || 
+                                             target.id === 'btn-clear-config' || 
+                                             target.closest('.buy-btn') || 
+                                             target.closest('.sell-btn') || 
+                                             target.closest('.buy-expansion-btn') || 
+                                             target.closest('.lotto-buy-btn') || 
+                                             target.closest('.claim-btn') || 
+                                             target.closest('#btn-save-game') || 
+                                             target.closest('#btn-reset-game');
+                
+                if (!isCustomSoundButton) {
+                    soundManager.playSFX('click');
+                }
+            }
+        });
+
         // Toggle Inventory Button
         if (this.btnOpenInventory) {
             this.btnOpenInventory.addEventListener('click', () => this.toggleInventory());
@@ -110,6 +144,14 @@ export class UIController {
                 // Press C to toggle Cloud Save panel
                 if (!dialogueInstance.isOpen() && !shopInstance.isOpen() && !lotteryUIInstance.isOpen() && this.inventoryOverlay.classList.contains('hidden')) {
                     this.toggleAuth();
+                }
+            } else if (e.key === 'm' || e.key === 'M') {
+                // Press M to toggle BGM mute
+                const btnToggleMusic = document.getElementById('btn-toggle-music');
+                if (btnToggleMusic) {
+                    const muted = soundManager.toggleMute();
+                    btnToggleMusic.classList.toggle('muted', muted);
+                    btnToggleMusic.innerText = muted ? '🔇 Tắt Nhạc' : '🎵 Nhạc';
                 }
             } else if (e.key === 'Escape') {
                 // Close inventory if open

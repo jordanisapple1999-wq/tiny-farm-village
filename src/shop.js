@@ -3,6 +3,7 @@
 import { CROPS } from './crop.js';
 import { inventoryInstance } from './inventory.js';
 import { SaveSystem } from './save.js';
+import { soundManager } from './audio.js';
 
 export class ShopController {
     constructor() {
@@ -118,9 +119,11 @@ export class ShopController {
         if (inventoryInstance.getCoins() >= crop.seedCost) {
             inventoryInstance.spendCoins(crop.seedCost);
             inventoryInstance.addItem(`${cropId}_seed`, 1);
+            soundManager.playSFX('coin');
             SaveSystem.showToast(`Đã mua 1 Hạt giống ${crop.name}! 🥕`);
             this.renderSeedShop();
         } else {
+            soundManager.playSFX('error');
             SaveSystem.showToast(`Bạn không đủ tiền để mua hạt giống! 🪙❌`);
         }
     }
@@ -130,6 +133,7 @@ export class ShopController {
             const farm = window._phaserScene ? window._phaserScene.farm : null;
             if (farm && farm.unlockNextPlot()) {
                 inventoryInstance.spendCoins(cost);
+                soundManager.playSFX('save');
                 SaveSystem.showToast(`Khai hoang đất thành công! 🌾🎉`);
                 this.renderSeedShop();
                 if (window._phaserScene.ui) {
@@ -138,9 +142,11 @@ export class ShopController {
                 // Save game immediately to persist the newly unlocked land
                 SaveSystem.saveGame(window._phaserScene.player, farm);
             } else {
+                soundManager.playSFX('error');
                 SaveSystem.showToast(`Có lỗi xảy ra hoặc đã mở khóa hết đất! ❌`);
             }
         } else {
+            soundManager.playSFX('error');
             SaveSystem.showToast(`Bạn không đủ tiền vàng để mở rộng đất! 🪙❌`);
         }
     }
@@ -218,6 +224,7 @@ export class ShopController {
         if (inventoryInstance.getItemQty(cropKey) > 0) {
             inventoryInstance.removeItem(cropKey, 1);
             inventoryInstance.addCoins(crop.sellPrice);
+            soundManager.playSFX('coin');
             SaveSystem.showToast(`Đã bán 1 ${crop.name}! Thu về 🪙${crop.sellPrice}`);
             this.renderSellMenu();
         }
@@ -240,9 +247,11 @@ export class ShopController {
         });
 
         if (soldAny) {
+            soundManager.playSFX('coin');
             SaveSystem.showToast(`Đã bán toàn bộ nông sản! Kiếm được 🪙${totalEarned}`);
             this.renderSellMenu();
         } else {
+            soundManager.playSFX('error');
             SaveSystem.showToast(`Bạn không có nông sản nào để bán! 🌾❌`);
         }
     }

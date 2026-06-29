@@ -4,6 +4,7 @@ import { inventoryInstance } from './inventory.js';
 import { lotteryInstance } from './lottery.js';
 import { auth, db, doc, getDoc, setDoc, serverTimestamp } from './firebase.js';
 import { isFirebaseConfigured } from './firebaseConfig.js';
+import { soundManager } from './audio.js';
 
 const SAVE_KEY = 'tiny_farm_village_save';
 
@@ -27,6 +28,7 @@ export class SaveSystem {
             // Save lottery state locally
             lotteryInstance.saveState();
 
+            soundManager.playSFX('save');
             this.showToast('Đã lưu game tự động! 💾');
 
             // 2. Async save to Firebase Cloud if logged in
@@ -49,6 +51,7 @@ export class SaveSystem {
             return true;
         } catch (e) {
             console.error('Error saving game:', e);
+            soundManager.playSFX('error');
             this.showToast('Không thể lưu game! ❌');
             return false;
         }
@@ -87,6 +90,7 @@ export class SaveSystem {
             // Load lottery state
             lotteryInstance.loadState();
 
+            soundManager.playSFX('save');
             this.showToast('Đã tải lại tiến trình! 🌾');
             return true;
         } catch (e) {
@@ -117,14 +121,17 @@ export class SaveSystem {
                         lastSyncEl.innerText = new Date(docSnap.data().updatedAt?.seconds * 1000 || Date.now()).toLocaleTimeString();
                     }
                     this.showToast('Đã tải tiến trình từ đám mây! 📥☁️');
+                    soundManager.playSFX('save');
                     return true;
                 }
             }
             this.showToast('Không có dữ liệu trên đám mây! ☁️');
+            soundManager.playSFX('error');
             return false;
         } catch (e) {
             console.error('Error loading from Firebase Cloud:', e);
             this.showToast('Lỗi khi tải từ đám mây! ❌');
+            soundManager.playSFX('error');
             return false;
         }
     }
@@ -135,6 +142,7 @@ export class SaveSystem {
             const rawData = localStorage.getItem(SAVE_KEY);
             if (!rawData) {
                 this.showToast('Không có lưu cục bộ để tải lên! ❌');
+                soundManager.playSFX('error');
                 return false;
             }
             
@@ -152,10 +160,12 @@ export class SaveSystem {
             }
             
             this.showToast('Đã tải tiến trình lên đám mây! 📤☁️');
+            soundManager.playSFX('save');
             return true;
         } catch (e) {
             console.error('Error uploading to Firebase Cloud:', e);
             this.showToast('Không thể đồng bộ lên đám mây! ❌');
+            soundManager.playSFX('error');
             return false;
         }
     }
@@ -169,6 +179,7 @@ export class SaveSystem {
             localStorage.removeItem(SAVE_KEY);
             lotteryInstance.resetState();
             
+            soundManager.playSFX('save');
             this.showToast('Đã xóa dữ liệu lưu! Game sẽ tải lại...', 1500);
             setTimeout(() => {
                 window.location.reload();
@@ -176,6 +187,7 @@ export class SaveSystem {
             return true;
         } catch (e) {
             console.error('Error resetting game:', e);
+            soundManager.playSFX('error');
             return false;
         }
     }
