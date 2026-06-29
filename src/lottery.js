@@ -41,6 +41,12 @@ export class LotterySystem {
     playSound(type) {
         try {
             if (soundManager.isMuted) return; // Muted globally
+            
+            // Only play lottery sounds if the lottery panel is open
+            if (window._lotteryUI && !window._lotteryUI.isOpen()) {
+                return;
+            }
+
             this.initAudio();
             if (!this.audioCtx) return;
 
@@ -280,15 +286,24 @@ export class LotterySystem {
             dacbiet: generateWinningNumber()
         };
 
-        // 2. Delegate animation trigger to UI (which takes ~6 seconds)
-        if (window._lotteryUI) {
+        // 2. Delegate animation trigger to UI if the panel is open
+        if (window._lotteryUI && window._lotteryUI.isOpen()) {
             window._lotteryUI.animateDraw(winningNumbers, (matches, rewards) => {
                 this.completeDraw(winningNumbers, matches, rewards);
             });
         } else {
-            // Fallback if no UI bound (e.g. offline simulation)
+            // Fallback: draw instantly if panel is closed or UI is not bound
             const check = this.checkTickets(winningNumbers);
             this.completeDraw(winningNumbers, check.matches, check.rewards);
+
+            // Display background completion toast notification immediately
+            if (check.rewards > 0) {
+                SaveSystem.showToast(`Xổ số kết thúc! Bạn đã trúng thưởng 🪙${check.rewards} vàng! 🎉`, 5000);
+            } else if (check.matches.length > 0) {
+                SaveSystem.showToast(`Xổ số kết thúc! Vé của bạn không trúng giải kỳ này. 🎟️💨`, 4000);
+            } else {
+                SaveSystem.showToast(`Xổ số kết thúc! Giải Đặc Biệt kỳ này là số ${winningNumbers.dacbiet} 👑`, 4000);
+            }
         }
     }
 
