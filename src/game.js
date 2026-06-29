@@ -69,6 +69,13 @@ class MainScene extends Phaser.Scene {
         // ── 9. Camera ──
         this.cameras.main.setBounds(0, 0, mapData.width, mapData.height);
         this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+        
+        // Auto zoom-in on mobile to make sprites and text larger and easier to see
+        const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        if (isTouch) {
+            this.cameras.main.setZoom(1.85);
+        }
+        
         this.cameras.main.setBackgroundColor('#3a6e22'); // Fill gaps between tiles
 
         // ── 10. HTML overlay UI ──
@@ -372,9 +379,39 @@ class MainScene extends Phaser.Scene {
         graphics.lineTo(31, 31 - len);
         graphics.strokePath();
     }
+
+    triggerMobileInteraction() {
+        if (dialogueInstance.isOpen()) {
+            dialogueInstance.handleNext();
+            return;
+        }
+
+        let nearNpc = null;
+        this.npcs.forEach(npc => {
+            if (Phaser.Math.Distance.Between(this.player.x, this.player.y, npc.x, npc.y) < 50)
+                nearNpc = npc;
+        });
+
+        if (nearNpc) {
+            nearNpc.interact();
+            return;
+        }
+
+        const target = this.player.getFacingGridPos();
+        const plot = this.farm.getPlotAt(target.gridX, target.gridY);
+        if (plot && !plot.locked) {
+            if (plot.cropId === null) {
+                plot.plant(inventoryInstance.getSelectedSeed());
+            } else if (plot.stage === 4) {
+                plot.harvest();
+            }
+        }
+    }
 }
 
 // ── Phaser config ─────────────────────────────────────────────────────────────
+const isMobileDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
 const config = {
     type:   Phaser.AUTO,
     width:  800,
@@ -384,7 +421,7 @@ const config = {
     pixelArt: true,
     roundPixels: true,
     scale: {
-        mode:       Phaser.Scale.FIT,
+        mode:       isMobileDevice ? Phaser.Scale.ENVELOP : Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
         width:      800,
         height:     608

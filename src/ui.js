@@ -65,6 +65,13 @@ export class UIController {
             this.syncHUD();
             this.renderInventory();
         });
+
+        // Detect touch capability and toggle mobile controls
+        const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        if (isTouch) {
+            document.body.classList.add('mobile-device');
+            this.initMobileControls();
+        }
     }
 
     initEvents() {
@@ -188,6 +195,21 @@ export class UIController {
                 }
             }
         });
+
+        // Mobile Menu Toggle
+        const menuToggle = document.getElementById('btn-mobile-menu-toggle');
+        const hudRight = document.querySelector('.hud-right');
+        if (menuToggle && hudRight) {
+            menuToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                hudRight.classList.toggle('menu-expanded');
+                soundManager.playSFX('click');
+            });
+            // Close menu when tapping anywhere else
+            document.addEventListener('click', () => {
+                hudRight.classList.remove('menu-expanded');
+            });
+        }
     }
 
     // --- HUD LOGIC ---
@@ -283,8 +305,10 @@ export class UIController {
     // --- INTERACTION PROMPT HINTS ---
     showPrompt(actionText, showKey = true) {
         if (this.interactionPrompt) {
+            const isMobile = document.body.classList.contains('mobile-device');
             if (showKey) {
-                this.interactionPrompt.innerHTML = `Nhấn <span class="key-hint">E</span> để <span>${actionText}</span>`;
+                const hint = isMobile ? 'HÀNH ĐỘNG' : 'E';
+                this.interactionPrompt.innerHTML = `Nhấn <span class="key-hint">${hint}</span> để <span>${actionText}</span>`;
             } else {
                 this.interactionPrompt.innerHTML = `<span>${actionText}</span>`;
             }
@@ -556,7 +580,7 @@ export class UIController {
             // Connected
             if (this.btnOpenAuth) {
                 this.btnOpenAuth.classList.add('connected');
-                this.btnOpenAuth.innerText = '☁️ Trực Tuyến';
+                this.btnOpenAuth.innerHTML = '☁️ <span>Trực Tuyến</span>';
             }
             if (this.profileEmailSpan) {
                 this.profileEmailSpan.innerText = user.email;
@@ -573,7 +597,7 @@ export class UIController {
             // Not connected
             if (this.btnOpenAuth) {
                 this.btnOpenAuth.classList.remove('connected');
-                this.btnOpenAuth.innerText = '☁️ Đám mây';
+                this.btnOpenAuth.innerHTML = '☁️ <span>Đám mây</span>';
             }
             if (this.tabLoginBtn) this.tabLoginBtn.classList.remove('hidden');
             if (this.tabRegisterBtn) this.tabRegisterBtn.classList.remove('hidden');
@@ -584,6 +608,94 @@ export class UIController {
                 this.switchAuthTab('config');
             }
         }
+    }
+
+    initMobileControls() {
+        const base = document.getElementById('joystick-base');
+        const handle = document.getElementById('joystick-handle');
+        const actionBtn = document.getElementById('btn-mobile-action');
+        if (!base || !handle || !actionBtn) return;
+
+        let activeTouchId = null;
+        const maxDist = 35; // Max radius the handle can move in pixels
+
+        const handleTouchStart = (e) => {
+            e.preventDefault();
+            const touch = e.changedTouches[0];
+            activeTouchId = touch.identifier;
+        };
+
+        const handleTouchMove = (e) => {
+            if (activeTouchId === null) return;
+            e.preventDefault();
+            
+            let touch = null;
+            for (let i = 0; i < e.touches.length; i++) {
+                if (e.touches[i].identifier === activeTouchId) {
+                    touch = e.touches[i];
+                    break;
+                }
+            }
+            if (!touch) return;
+
+            const rect = base.getBoundingClientRect();
+            const bx = rect.left + rect.width / 2;
+            const by = rect.top + rect.height / 2;
+
+            let dx = touch.clientX - bx;
+            let dy = touch.clientY - by;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist > maxDist) {
+                dx = (dx / dist) * maxDist;
+                dy = (dy / dist) * maxDist;
+            }
+
+            handle.style.transform = `translate(${dx}px, ${dy}px)`;
+
+            const normX = dx / maxDist;
+            const normY = dy / maxDist;
+
+            if (this.scene && this.scene.player) {
+                this.scene.player.touchVelocity.x = normX * this.scene.player.speed;
+                this.scene.player.touchVelocity.y = normY * this.scene.player.speed;
+            }
+        };
+
+        const handleTouchEnd = (e) => {
+            if (activeTouchId === null) return;
+            e.preventDefault();
+            
+            let ended = false;
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                if (e.changedTouches[i].identifier === activeTouchId) {
+                    ended = true;
+                    break;
+                }
+            }
+            if (!ended) return;
+
+            activeTouchId = null;
+            handle.style.transform = `translate(0px, 0px)`;
+            
+            if (this.scene && this.scene.player) {
+                this.scene.player.touchVelocity.x = 0;
+                this.scene.player.touchVelocity.y = 0;
+            }
+        };
+
+        base.addEventListener('touchstart', handleTouchStart, { passive: false });
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
+        document.addEventListener('touchend', handleTouchEnd, { passive: false });
+        document.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+
+        // Action button click (mimics pressing 'E')
+        actionBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (this.scene) {
+                this.scene.triggerMobileInteraction();
+            }
+        });
     }
 
     isAnyPanelOpen() {

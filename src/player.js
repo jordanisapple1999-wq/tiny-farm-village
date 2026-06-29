@@ -49,6 +49,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.speed      = 120;
         this.facingDir  = 'down';
         this._useAI     = useAI;
+        this.touchVelocity = { x: 0, y: 0 };
 
         this.cursors = scene.input.keyboard.createCursorKeys();
         this.wasd    = scene.input.keyboard.addKeys({
@@ -155,8 +156,25 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if      (this.cursors.up.isDown    || this.wasd.up.isDown)    { vy = -this.speed; this.facingDir = 'up';    }
         else if (this.cursors.down.isDown  || this.wasd.down.isDown)  { vy =  this.speed; this.facingDir = 'down';  }
 
-        // Diagonal normalization
-        if (vx !== 0 && vy !== 0) { vx *= 0.7071; vy *= 0.7071; }
+        // Touch virtual joystick override if no keyboard input is active
+        if (vx === 0 && vy === 0 && (this.touchVelocity.x !== 0 || this.touchVelocity.y !== 0)) {
+            vx = this.touchVelocity.x;
+            vy = this.touchVelocity.y;
+            
+            // Set facing direction based on stronger vector component
+            if (Math.abs(vy) > Math.abs(vx)) {
+                this.facingDir = vy < 0 ? 'up' : 'down';
+            } else {
+                this.facingDir = vx < 0 ? 'left' : 'right';
+            }
+        }
+
+        // Diagonal normalization (only for keyboard, joystick is pre-normalized)
+        if (vx !== 0 && vy !== 0 && (this.cursors.up.isDown || this.cursors.down.isDown || this.wasd.up.isDown || this.wasd.down.isDown)) { 
+            vx *= 0.7071; 
+            vy *= 0.7071; 
+        }
+        
         this.body.setVelocity(vx, vy);
 
         const isMoving = vx !== 0 || vy !== 0;

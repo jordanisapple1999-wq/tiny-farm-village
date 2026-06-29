@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="description" content="Tiny Farm Village - Trò chơi nông trại 2D pixel art đáng yêu">
     <title>Tiny Farm Village 🌾</title>
 
@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="style.css?v=2">
+    <link rel="stylesheet" href="style.css?v=5">
     <!-- Critical inline CSS: hide overlay panels before external CSS loads -->
     <style>
         .hidden, .ui-panel-overlay.hidden { display: none !important; }
@@ -138,11 +138,20 @@
         </div>
 
         <div class="hud-right">
-            <button id="btn-toggle-music"   class="cozy-btn music-btn" title="Bật/Tắt nhạc nền (M)">🎵 Nhạc</button>
-            <button id="btn-open-auth"      class="cozy-btn cloud-btn" title="Lưu đám mây (C)">☁️ Đám mây</button>
-            <button id="btn-open-inventory" class="cozy-btn" title="Túi đồ (I)">🎒 Túi đồ</button>
-            <button id="btn-save-game"      class="cozy-btn" title="Lưu game (Ctrl+S)">💾 Lưu</button>
-            <button id="btn-reset-game"     class="cozy-btn danger" title="Chơi lại">🔄 Chơi lại</button>
+            <button id="btn-mobile-menu-toggle" class="cozy-btn mobile-only" title="Menu">⚙️ <span>Menu</span></button>
+            <button id="btn-toggle-music"   class="cozy-btn music-btn" title="Bật/Tắt nhạc nền (M)">🎵 <span>Nhạc</span></button>
+            <button id="btn-open-auth"      class="cozy-btn cloud-btn" title="Lưu đám mây (C)">☁️ <span>Đám mây</span></button>
+            <!-- ── LOTTERY HUD BADGE ── -->
+            <div id="lottery-hud" class="lottery-hud-badge" title="Xổ số">
+                <span class="hud-lotto-icon">🎟️</span>
+                <div class="hud-lotto-info">
+                    <span id="lotto-hud-timer">03:00</span>
+                    <span id="lotto-hud-tickets">0 vé</span>
+                </div>
+            </div>
+            <button id="btn-open-inventory" class="cozy-btn" title="Túi đồ (I)">🎒 <span>Túi đồ</span></button>
+            <button id="btn-save-game"      class="cozy-btn" title="Lưu game (Ctrl+S)">💾 <span>Lưu</span></button>
+            <button id="btn-reset-game"     class="cozy-btn danger" title="Chơi lại">🔄 <span>Chơi lại</span></button>
         </div>
     </div>
 
@@ -230,14 +239,7 @@
         </div>
     </div>
 
-    <!-- ── LOTTERY HUD BADGE ── -->
-    <div id="lottery-hud" class="lottery-hud-badge">
-        <span class="hud-lotto-icon">🎟️</span>
-        <div class="hud-lotto-info">
-            <span id="lotto-hud-timer">03:00</span>
-            <span id="lotto-hud-tickets">0 vé</span>
-        </div>
-    </div>
+
 
     <!-- ── CHARACTER NAMING OVERLAY ── -->
     <div id="naming-overlay" class="ui-panel-overlay hidden">
@@ -355,6 +357,13 @@
                     <span id="lotto-countdown" class="sign-countdown">03:00</span>
                     <span class="sign-desc">Quay số sau mỗi 3 phút</span>
                 </div>
+            </div>
+
+            <!-- Mobile Lottery Navigation Tabs -->
+            <div class="lottery-mobile-tabs mobile-only">
+                <button id="lotto-tab-buy" class="lotto-tab-btn active">🎟️ Mua Vé</button>
+                <button id="lotto-tab-draw" class="lotto-tab-btn">🎰 Quay Số</button>
+                <button id="lotto-tab-history" class="lotto-tab-btn">📊 Lịch Sử</button>
             </div>
 
             <!-- Main Content: Upper Row (Buy/Tickets/Prizes) -->
@@ -480,6 +489,25 @@
 </div>
 
 <div id="youtube-bgm-container"></div>
+
+<!-- ── MOBILE VIRTUAL CONTROLS ────────────────────────── -->
+<div id="mobile-joystick-zone" class="mobile-only">
+    <div id="joystick-base">
+        <div id="joystick-handle"></div>
+    </div>
+</div>
+<div id="mobile-action-zone" class="mobile-only">
+    <button id="btn-mobile-action">HÀNH ĐỘNG</button>
+</div>
+
+<!-- ── MOBILE ROTATE DEVICE OVERLAY ──────────────────── -->
+<div id="rotate-device-overlay">
+    <div class="rotate-content">
+        <div class="rotate-icon">🔄📱</div>
+        <h2>Vui lòng xoay ngang màn hình</h2>
+        <p>Để có trải nghiệm nông trại tuyệt vời nhất trên Tiny Farm Village!</p>
+    </div>
+</div>
 
 <script type="module" src="src/game.js?v=2"></script>
 </body>

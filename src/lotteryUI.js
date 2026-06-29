@@ -169,6 +169,30 @@ export class LotteryUI {
                 }
             }
         });
+
+        // Mobile Tab Click Handlers
+        const tabBuy = document.getElementById('lotto-tab-buy');
+        const tabDraw = document.getElementById('lotto-tab-draw');
+        const tabHistory = document.getElementById('lotto-tab-history');
+
+        if (tabBuy) {
+            tabBuy.addEventListener('click', () => {
+                lotteryInstance.playSound('tick');
+                this.switchMobileTab('lotto-tab-buy', 'tab-buy-active');
+            });
+        }
+        if (tabDraw) {
+            tabDraw.addEventListener('click', () => {
+                lotteryInstance.playSound('tick');
+                this.switchMobileTab('lotto-tab-draw', 'tab-draw-active');
+            });
+        }
+        if (tabHistory) {
+            tabHistory.addEventListener('click', () => {
+                lotteryInstance.playSound('tick');
+                this.switchMobileTab('lotto-tab-history', 'tab-history-active');
+            });
+        }
     }
 
     isOpen() {
@@ -193,6 +217,7 @@ export class LotteryUI {
 
             // Restore slot balls visual and show results feedback banner if lastDraw is unclaimed
             if (lotteryInstance.lastDraw && !lotteryInstance.lastDraw.claimed) {
+                this.switchMobileTab('lotto-tab-draw', 'tab-draw-active');
                 const win = lotteryInstance.lastDraw.winningNumbers;
                 
                 this.balls.bet.innerText = win.bet;
@@ -212,6 +237,7 @@ export class LotteryUI {
 
                 this.showDrawFeedback(lotteryInstance.lastDraw.rewards, lotteryInstance.lastDraw.matches);
             } else {
+                this.switchMobileTab('lotto-tab-buy', 'tab-buy-active');
                 // Ensure the feedback banner is hidden and balls reset if there's no pending claim
                 if (this.feedbackBanner) this.feedbackBanner.classList.add('hidden');
                 Object.values(this.balls).forEach(ball => {
@@ -366,6 +392,9 @@ export class LotteryUI {
     animateDraw(winningNumbers, callback) {
         this.isDrawingAnimation = true;
         
+        // Auto switch tab to draw view on mobile
+        this.switchMobileTab('lotto-tab-draw', 'tab-draw-active');
+        
         // Notify player via toast that draw is starting, showing a friendly prompt
         SaveSystem.showToast("Kỳ quay số bắt đầu! Nhấp vào 🎟️ ở góc trên để theo dõi 🎰", 4000);
 
@@ -513,6 +542,22 @@ export class LotteryUI {
                 }
             }, 1000);
         }
+    }
+
+    switchMobileTab(activeTabId, activeClass) {
+        const lottoBox = this.overlay ? this.overlay.querySelector('.lottery-box') : null;
+        if (!lottoBox) return;
+        
+        lottoBox.classList.remove('tab-buy-active', 'tab-draw-active', 'tab-history-active');
+        lottoBox.classList.add(activeClass);
+        
+        const tabBuy = document.getElementById('lotto-tab-buy');
+        const tabDraw = document.getElementById('lotto-tab-draw');
+        const tabHistory = document.getElementById('lotto-tab-history');
+        
+        [tabBuy, tabDraw, tabHistory].forEach(btn => {
+            if (btn) btn.classList.toggle('active', btn.id === activeTabId);
+        });
     }
 }
 
