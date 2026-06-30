@@ -147,7 +147,7 @@
     <div id="hud-container">
         <div class="hud-left">
             <div class="hud-coin-panel">
-                <span class="hud-coin-icon">🪙</span>
+                <span class="hud-coin-icon"><span class="gold-coin-icon"></span></span>
                 <span id="hud-coins-value">30</span>
             </div>
             <div class="hud-item-panel">
@@ -235,7 +235,7 @@
             </div>
             <div class="panel-footer flex-footer">
                 <div class="player-coins-indicator">
-                    Tiền của bạn: 🪙 <span id="shop-player-coins">30</span>
+                    Tiền của bạn: <span class="gold-coin-icon"></span> <span id="shop-player-coins">30</span>
                 </div>
             </div>
         </div>
@@ -257,7 +257,7 @@
             </div>
             <div class="panel-footer flex-footer">
                 <div class="player-coins-indicator">
-                    Tiền của bạn: 🪙 <span id="sell-player-coins">30</span>
+                    Tiền của bạn: <span class="gold-coin-icon"></span> <span id="sell-player-coins">30</span>
                 </div>
                 <button id="btn-sell-all" class="cozy-btn green-btn">Bán tất cả nông sản</button>
             </div>
@@ -460,8 +460,10 @@
                 <button id="lotto-tab-history" class="lotto-tab-btn">📊 Lịch Sử</button>
             </div>
 
-            <!-- Main Content: Upper Row (Buy/Tickets/Prizes) -->
-            <div class="lottery-main-layout">
+            <!-- Content Wrapper to stack or side-by-side layouts -->
+            <div class="lottery-content-wrapper">
+                <!-- Main Content: Upper Row (Buy/Tickets/Prizes) -->
+                <div class="lottery-main-layout">
                 <!-- Left Section: Choose Number & Buy -->
                 <div class="lotto-sub-panel select-number-panel">
                     <div class="sub-panel-title">CHỌN SỐ</div>
@@ -471,8 +473,8 @@
                         <button id="btn-lotto-inc" class="spinner-btn">+</button>
                     </div>
                     <button id="btn-lotto-random" class="cozy-btn btn-random">🎲 CHỌN NGẪU NHIÊN</button>
-                    <div class="lotto-ticket-price">GIÁ VÉ: 🪙 100</div>
-                    <div class="lotto-balance-info">Vàng hiện có: 🪙 <span id="lotto-player-coins">0</span></div>
+                    <div class="lotto-ticket-price">GIÁ VÉ: <span class="gold-coin-icon"></span> 100</div>
+                    <div class="lotto-balance-info">Vàng hiện có: <span class="gold-coin-icon"></span> <span id="lotto-player-coins">0</span></div>
                     <button id="btn-lotto-buy" class="cozy-btn lotto-buy-btn">MUA VÉ 🎟️</button>
                 </div>
 
@@ -494,31 +496,31 @@
                             <span class="prize-medal bronze">🥉</span>
                             <span class="prize-name">GIẢI BÉT</span>
                             <span class="prize-multiplier">x2</span>
-                            <span class="prize-reward">🪙 200</span>
+                            <span class="prize-reward"><span class="gold-coin-icon"></span> 200</span>
                         </div>
                         <div class="prize-item">
                             <span class="prize-medal green">🥈</span>
                             <span class="prize-name">GIẢI BA</span>
                             <span class="prize-multiplier">x3</span>
-                            <span class="prize-reward">🪙 300</span>
+                            <span class="prize-reward"><span class="gold-coin-icon"></span> 300</span>
                         </div>
                         <div class="prize-item">
                             <span class="prize-medal blue">🥇</span>
                             <span class="prize-name">GIẢI NHÌ</span>
                             <span class="prize-multiplier">x4</span>
-                            <span class="prize-reward">🪙 400</span>
+                            <span class="prize-reward"><span class="gold-coin-icon"></span> 400</span>
                         </div>
                         <div class="prize-item">
                             <span class="prize-medal gold">🏆</span>
                             <span class="prize-name">GIẢI NHẤT</span>
                             <span class="prize-multiplier">x5</span>
-                            <span class="prize-reward">🪙 500</span>
+                            <span class="prize-reward"><span class="gold-coin-icon"></span> 500</span>
                         </div>
                         <div class="prize-item gold-special">
                             <span class="prize-medal crown">👑</span>
                             <span class="prize-name font-bold">GIẢI ĐẶC BIỆT</span>
                             <span class="prize-multiplier">x100</span>
-                            <span class="prize-reward font-bold">🪙 10000</span>
+                            <span class="prize-reward font-bold"><span class="gold-coin-icon"></span> 10000</span>
                         </div>
                     </div>
                     <div class="prize-footer-note">Giá vé: 100 vàng/vé</div>
@@ -564,7 +566,7 @@
                     <!-- Draw Feedback Banner -->
                     <div id="draw-feedback-banner" class="draw-feedback-banner hidden">
                         <div class="feedback-text" id="draw-feedback-text">Chúc mừng! Bạn đã trúng giải</div>
-                        <button id="btn-lotto-claim" class="cozy-btn claim-btn">NHẬN THƯỞNG 🪙</button>
+                        <button id="btn-lotto-claim" class="cozy-btn claim-btn">NHẬN THƯỞNG <span class="gold-coin-icon" style="margin-left: 4px;"></span></button>
                     </div>
                 </div>
 
@@ -577,6 +579,7 @@
                     <div class="my-tickets-total-reward">Tổng thưởng: <span id="lotto-my-reward-value">🪙 0</span></div>
                 </div>
             </div>
+            </div><!-- lottery-content-wrapper -->
         </div>
     </div>
 

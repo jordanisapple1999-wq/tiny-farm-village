@@ -77,7 +77,7 @@ export class UIController {
 
             const floatSpan = document.createElement('span');
             floatSpan.className = 'allowance-float-text';
-            floatSpan.innerText = `+🪙${amount} Trợ cấp`;
+            floatSpan.innerHTML = `+<span class="gold-coin-icon"></span>${amount} Trợ cấp`;
 
             coinPanel.appendChild(floatSpan);
 

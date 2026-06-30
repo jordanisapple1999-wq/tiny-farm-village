@@ -75,7 +75,7 @@ const server = http.createServer((req, res) => {
 
 const os = require('os');
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running at http://localhost:${PORT}`);
     const interfaces = os.networkInterfaces();
     for (const name of Object.keys(interfaces)) {

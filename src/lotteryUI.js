@@ -376,10 +376,10 @@ export class LotteryUI {
             
             if (!lotteryInstance.lastDraw || lotteryInstance.lastDraw.tickets.length === 0) {
                 this.myTicketsCheckList.innerHTML = '<div class="no-tickets-check-msg">Chưa mua vé trong kỳ trước</div>';
-                if (this.myRewardValue) this.myRewardValue.innerText = '🪙 0';
+                if (this.myRewardValue) this.myRewardValue.innerHTML = '<span class="gold-coin-icon"></span> 0';
             } else {
                 const draw = lotteryInstance.lastDraw;
-                if (this.myRewardValue) this.myRewardValue.innerText = `🪙 ${draw.rewards}`;
+                if (this.myRewardValue) this.myRewardValue.innerHTML = `<span class="gold-coin-icon"></span> ${draw.rewards}`;
 
                 draw.matches.forEach(match => {
                     const el = document.createElement('div');
@@ -387,7 +387,7 @@ export class LotteryUI {
                     el.innerHTML = `
                         <span class="check-ticket-num">🎟️ ${match.ticket}</span>
                         <span class="check-ticket-status">${match.prize ? match.prize : 'Không trúng'}</span>
-                        ${match.prize ? `<span class="check-ticket-reward">+🪙${match.reward} 🎉</span>` : ''}
+                        ${match.prize ? `<span class="check-ticket-reward">+<span class="gold-coin-icon"></span>${match.reward} 🎉</span>` : ''}
                     `;
                     this.myTicketsCheckList.appendChild(el);
                 });
@@ -519,7 +519,7 @@ export class LotteryUI {
                 .map(m => `Vé ${m.ticket} trúng ${m.prize}`)
                 .join(', ');
             
-            this.feedbackText.innerHTML = `🎉 <strong>Chúc mừng!</strong> Bạn đã trúng thưởng tổng cộng <strong>🪙 ${rewards} vàng</strong>! <br> <span style="font-size:0.75rem; opacity:0.85;">(${wonDetails})</span>`;
+            this.feedbackText.innerHTML = `🎉 <strong>Chúc mừng!</strong> Bạn đã trúng thưởng tổng cộng <strong><span class="gold-coin-icon"></span> ${rewards} vàng</strong>! <br> <span style="font-size:0.75rem; opacity:0.85;">(${wonDetails})</span>`;
             
             // Launch confetti canvas overlay
             this.confetti = new ConfettiEffect();

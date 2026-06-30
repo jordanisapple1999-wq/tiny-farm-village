@@ -157,6 +157,32 @@ html, body {
 .cozy-btn.green-btn  { background: linear-gradient(to bottom, var(--grass-light), var(--grass-dark)); color: #fff; text-shadow: 1px 1px 0 var(--wood-dark); }
 .cozy-btn.music-btn.muted { background: linear-gradient(to bottom, #f87171, #dc2626); color: #fff; text-shadow: 1px 1px 0 var(--wood-dark); }
 
+/* Gold coin custom rendering */
+.gold-coin-icon {
+    display: inline-flex;
+    width: 1.1em;
+    height: 1.1em;
+    background: radial-gradient(circle at 30% 30%, #ffd875 0%, #f59e0b 50%, #b45309 100%);
+    border: 1.5px solid #78350f;
+    border-radius: 50%;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.4);
+    vertical-align: middle;
+    position: relative;
+    flex-shrink: 0;
+    margin: 0 2px;
+}
+.gold-coin-icon::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50%;
+    height: 50%;
+    border: 1px dashed rgba(120, 53, 15, 0.6);
+    border-radius: 50%;
+}
+
 .btn-close-panel {
     width: 32px; height: 32px;
     border-radius: 50%;
@@ -638,6 +664,13 @@ html, body {
     font-size: 0.68rem;
     color: #ebd9fc;
     opacity: 0.8;
+}
+
+.lottery-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
 }
 
 /* Main Layout Grid Structure */
@@ -2401,14 +2434,18 @@ body.mobile-device .lotto-tab-btn.active {
 }
 
 /* Layout wrapper containers - flex row showing 2 panels side by side */
-body.mobile-device .lottery-main-layout,
-body.mobile-device .lottery-bottom-layout {
-    display: none !important;
+body.mobile-device .lottery-content-wrapper {
+    display: flex !important;
     flex-direction: row !important;
     gap: 6px !important;
     flex: 1 !important;
     min-height: 0 !important;
     overflow: hidden !important;
+}
+
+body.mobile-device .lottery-main-layout,
+body.mobile-device .lottery-bottom-layout {
+    display: contents !important;
 }
 
 /* Hide all sub-panels by default on mobile */
@@ -2426,21 +2463,13 @@ body.mobile-device .my-tickets-check-panel {
 }
 
 /* ──── BUY TAB ──── */
-body.mobile-device .lottery-box.tab-buy-active .lottery-main-layout {
-    display: flex !important;
-    height: auto !important;
-}
 body.mobile-device .lottery-box.tab-buy-active .select-number-panel,
 body.mobile-device .lottery-box.tab-buy-active .bought-tickets-panel {
     display: flex !important;
     flex-direction: column !important;
 }
 
-/* ──── DRAW TAB: show lottery-bottom-layout as a 2-col side-by-side row ──── */
-body.mobile-device .lottery-box.tab-draw-active .lottery-bottom-layout {
-    display: flex !important;
-    height: auto !important;
-}
+/* ──── DRAW TAB: show draw-animation-panel and prize-structure-panel side-by-side ──── */
 body.mobile-device .lottery-box.tab-draw-active .draw-animation-panel,
 body.mobile-device .lottery-box.tab-draw-active .prize-structure-panel {
     display: flex !important;
@@ -2448,10 +2477,6 @@ body.mobile-device .lottery-box.tab-draw-active .prize-structure-panel {
 }
 
 /* ──── HISTORY TAB ──── */
-body.mobile-device .lottery-box.tab-history-active .lottery-bottom-layout {
-    display: flex !important;
-    height: auto !important;
-}
 body.mobile-device .lottery-box.tab-history-active .recent-results-panel,
 body.mobile-device .lottery-box.tab-history-active .my-tickets-check-panel {
     display: flex !important;
@@ -2467,15 +2492,66 @@ body.mobile-device .results-list-scroll {
     min-height: 0 !important;
 }
 
+/* Stack vertically under tab-draw-active only */
+body.mobile-device .lottery-box.tab-draw-active .lottery-content-wrapper {
+    flex-direction: column !important;
+}
+
 body.mobile-device .prize-list {
-    max-height: 90px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-around !important;
+    align-items: stretch !important;
+    gap: 4px !important;
+    max-height: none !important;
+    overflow-y: hidden !important;
+    overflow-x: auto !important;
+    margin-top: 4px !important;
     flex: 1 !important;
     min-height: 0 !important;
-    overflow-y: auto;
-    padding-right: 4px;
 }
-body.mobile-device .prize-list::-webkit-scrollbar { width: 4px; }
-body.mobile-device .prize-list::-webkit-scrollbar-thumb { background: var(--wood-light); }
+
+body.mobile-device .prize-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(58, 34, 18, 0.4) !important;
+    border-radius: 6px !important;
+    padding: 4px 6px !important;
+    font-size: 0.62rem !important;
+    text-align: center !important;
+    flex: 1 !important;
+    min-width: 70px !important;
+    gap: 2px !important;
+}
+
+body.mobile-device .prize-medal {
+    font-size: 14px !important;
+    margin-right: 0 !important;
+}
+
+body.mobile-device .prize-name {
+    flex-grow: 0 !important;
+    color: #ebd9fc !important;
+    font-weight: 700 !important;
+    font-size: 0.58rem !important;
+    white-space: nowrap !important;
+}
+
+body.mobile-device .prize-multiplier {
+    color: #a3a3a3 !important;
+    margin-right: 0 !important;
+    font-style: italic !important;
+    font-size: 0.55rem !important;
+}
+
+body.mobile-device .prize-reward {
+    color: var(--gold-light) !important;
+    font-weight: 800 !important;
+    font-size: 0.6rem !important;
+    white-space: nowrap !important;
+}
 
 body.mobile-device .draw-slots-container {
     display: grid !important;
@@ -2486,12 +2562,13 @@ body.mobile-device .draw-slots-container {
     margin: 2px 0 !important;
 }
 body.mobile-device .slot-ball {
-    width: 28px !important;
-    height: 28px !important;
-    font-size: 0.9rem !important;
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 1rem !important;
+    border-width: 2px !important;
 }
 body.mobile-device .slot-label {
-    font-size: 0.52rem !important;
+    font-size: 0.58rem !important;
     white-space: nowrap !important;
     letter-spacing: 0px !important;
 }

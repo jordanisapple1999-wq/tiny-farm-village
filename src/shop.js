@@ -105,7 +105,7 @@ export class ShopController {
                     if (crop) {
                         const priceSpan = document.getElementById(`price-val-${cropId}`);
                         if (priceSpan) {
-                            priceSpan.innerText = `🪙${finalVal * crop.seedCost}`;
+                            priceSpan.innerHTML = `<span class="gold-coin-icon"></span>${finalVal * crop.seedCost}`;
                         }
                     }
                 }
@@ -156,7 +156,7 @@ export class ShopController {
                     <span class="shop-item-icon">${crop.icon}</span>
                     <div class="shop-item-details">
                         <span class="shop-item-name">Hạt giống ${crop.name}</span>
-                        <span class="shop-item-sub">Thu hoạch sau: ${crop.growTime} giây | Bán lại: 🪙${crop.sellPrice}</span>
+                        <span class="shop-item-sub">Thu hoạch sau: ${crop.growTime} giây | Bán lại: <span class="gold-coin-icon"></span>${crop.sellPrice}</span>
                         <span class="shop-item-owned">Đang có trong túi: <strong>${ownedQty}</strong> hạt</span>
                     </div>
                 </div>
@@ -166,7 +166,7 @@ export class ShopController {
                         <span class="shop-qty-value" id="qty-val-${crop.id}">1</span>
                         <button class="qty-btn inc-btn" data-crop-id="${crop.id}">+</button>
                     </div>
-                    <span class="shop-item-price" id="price-val-${crop.id}">🪙${crop.seedCost}</span>
+                    <span class="shop-item-price" id="price-val-${crop.id}"><span class="gold-coin-icon"></span>${crop.seedCost}</span>
                     <button class="cozy-btn buy-btn" data-crop-id="${crop.id}">Mua</button>
                 </div>
             `;
@@ -182,7 +182,7 @@ export class ShopController {
                 const total = qty * crop.seedCost;
                 const priceSpan = row.querySelector(`#price-val-${crop.id}`);
                 if (priceSpan) {
-                    priceSpan.innerText = `🪙${total}`;
+                    priceSpan.innerHTML = `<span class="gold-coin-icon"></span>${total}`;
                 }
             };
 
@@ -240,7 +240,7 @@ export class ShopController {
                         </div>
                     </div>
                     <div class="shop-item-actions">
-                        <span class="shop-item-price">🪙${cost}</span>
+                        <span class="shop-item-price"><span class="gold-coin-icon"></span>${cost}</span>
                         <button class="cozy-btn green-btn buy-expansion-btn">Khai hoang</button>
                     </div>
                 `;
@@ -331,7 +331,7 @@ export class ShopController {
                     </div>
                 </div>
                 <div class="shop-item-actions">
-                    <span class="shop-item-price">🪙${crop.sellPrice} / cái</span>
+                    <span class="shop-item-price"><span class="gold-coin-icon"></span>${crop.sellPrice} / cái</span>
                     <button class="cozy-btn green-btn sell-btn" ${quantity <= 0 ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''} data-crop-id="${crop.id}">Bán (1)</button>
                     <button class="cozy-btn orange-btn sell-all-type-btn" ${quantity <= 0 ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''} data-crop-id="${crop.id}">Bán hết</button>
                 </div>
