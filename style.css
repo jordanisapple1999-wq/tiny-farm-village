@@ -676,7 +676,7 @@ html, body {
 .select-number-panel {
     align-items: center;
     justify-content: space-between;
-    height: 200px;
+    height: 225px;
 }
 .select-number-spinner {
     display: flex;
@@ -719,6 +719,11 @@ html, body {
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
 }
 .btn-random {
+    width: 100%;
+    box-sizing: border-box;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
     font-size: 0.72rem;
     padding: 6px 12px;
     background: linear-gradient(to bottom, #4ade80, #15803d);
@@ -732,7 +737,10 @@ html, body {
 }
 .lotto-buy-btn {
     width: 100%;
+    box-sizing: border-box;
+    display: inline-flex;
     justify-content: center;
+    align-items: center;
     background: linear-gradient(to bottom, #fb923c, #ea580c);
     color: white;
     text-shadow: 1px 1px 0 var(--wood-dark);
@@ -740,7 +748,7 @@ html, body {
 
 /* Bought list panel */
 .bought-tickets-panel {
-    height: 200px;
+    height: 225px;
 }
 .tickets-list-scroll {
     flex-grow: 1;
@@ -805,7 +813,7 @@ html, body {
 
 /* Prize structure panel */
 .prize-structure-panel {
-    height: 200px;
+    height: 225px;
     justify-content: space-between;
 }
 .prize-list {
@@ -924,8 +932,9 @@ html, body {
     border-color: #6366f1;
 }
 .draw-slots-container {
-    display: flex;
-    justify-content: space-around;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    justify-items: center;
     align-items: center;
     width: 100%;
     margin-top: 10px;
@@ -2447,6 +2456,10 @@ body.mobile-device .prize-list::-webkit-scrollbar { width: 4px; }
 body.mobile-device .prize-list::-webkit-scrollbar-thumb { background: var(--wood-light); }
 
 body.mobile-device .draw-slots-container {
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    justify-items: center !important;
+    align-items: center !important;
     gap: 4px !important;
     margin: 2px 0 !important;
 }

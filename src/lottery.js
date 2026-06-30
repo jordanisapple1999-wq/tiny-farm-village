@@ -389,11 +389,9 @@ export class LotterySystem {
             inventoryInstance.addCoins(rewards);
         }
 
-        // Reset tickets if they were drawn
-        if (this.ticketRoundId === drawRoundId) {
-            this.tickets = [];
-            this.ticketRoundId = null;
-        }
+        // Reset tickets since they are spent
+        this.tickets = [];
+        this.ticketRoundId = null;
 
         this.isDrawing = false;
 
