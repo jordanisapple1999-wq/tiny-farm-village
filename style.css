@@ -1871,18 +1871,28 @@ body.mobile-device {
         padding: 4px 12px;
     }
 
-    /* Move toast notification to bottom center on mobile */
+    /* Reposition toast notification to top center on mobile to avoid overlap */
     #toast-notification {
-        top: auto !important;
-        bottom: 24px !important;
+        top: 10px !important;
+        bottom: auto !important;
         transform: translateX(-50%) translateY(0) !important;
         max-width: 90vw !important;
         white-space: normal !important; /* Allow wrapping on small mobile screens */
         text-align: center !important;
+        font-size: 0.78rem !important;
+        padding: 6px 14px !important;
     }
     #toast-notification.toast-hidden {
         opacity: 0 !important;
-        transform: translate(-50%, 10px) !important;
+        transform: translate(-50%, -10px) !important;
+    }
+    /* Position interaction prompt to bottom center (above hotbar) on mobile */
+    #interaction-prompt {
+        bottom: 76px !important;
+        top: auto !important;
+        transform: translateX(-50%) !important;
+        font-size: 0.76rem !important;
+        padding: 5px 14px !important;
     }
 }
 
@@ -2525,41 +2535,53 @@ body.mobile-device .ticket-item {
 .shop-qty-selector {
     display: flex;
     align-items: center;
+    gap: 8px;
     margin-right: 10px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+    padding: 2px 4px;
+    border: 1.5px solid var(--wood-light);
 }
 
-.shop-qty-input {
-    width: 48px;
-    height: 32px;
-    text-align: center;
-    border: 2px solid var(--wood-dark);
-    border-radius: 6px;
-    background: #fff6eb;
-    color: var(--text-dark);
+.qty-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    border: 1px solid var(--wood-dark);
+    background: linear-gradient(to bottom, #f59e0b, #d97706);
+    color: #1a0f00;
     font-weight: 800;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+    -webkit-user-select: none;
     outline: none;
     padding: 0;
-    box-sizing: border-box;
-    font-family: var(--font-body);
 }
 
-/* Hide arrow spinner in number input */
-.shop-qty-input::-webkit-outer-spin-button,
-.shop-qty-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+.qty-btn:active {
+    transform: scale(0.9);
 }
-.shop-qty-input[type=number] {
-    -moz-appearance: textfield;
+
+.shop-qty-value {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: #ffd875;
+    min-width: 20px;
+    text-align: center;
+    text-shadow: 1px 1px 0 var(--wood-dark);
 }
 
 .shop-item-owned {
     display: block;
     font-size: 0.76rem;
-    color: #4b2e1e;
+    color: #ffdd99; /* Light warm gold for premium readability */
     margin-top: 4px;
-    opacity: 0.9;
+    opacity: 0.95;
 }
 
 .lotto-balance-info {
@@ -2644,10 +2666,14 @@ body.mobile-device .lotto-balance-info {
     font-size: 0.72rem !important;
     margin: 2px 0 4px 0 !important;
 }
-body.mobile-device .shop-qty-input {
-    width: 38px !important;
-    height: 26px !important;
+body.mobile-device .qty-btn {
+    width: 22px !important;
+    height: 22px !important;
     font-size: 0.8rem !important;
+}
+body.mobile-device .shop-qty-value {
+    font-size: 0.8rem !important;
+    min-width: 16px !important;
 }
 body.mobile-device .shop-item-owned {
     font-size: 0.68rem !important;

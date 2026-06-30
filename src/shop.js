@@ -73,7 +73,9 @@ export class ShopController {
                 </div>
                 <div class="shop-item-actions">
                     <div class="shop-qty-selector">
-                        <input type="number" min="1" max="99" value="1" class="shop-qty-input" data-crop-id="${crop.id}">
+                        <button class="qty-btn dec-btn" data-crop-id="${crop.id}">-</button>
+                        <span class="shop-qty-value" id="qty-val-${crop.id}">1</span>
+                        <button class="qty-btn inc-btn" data-crop-id="${crop.id}">+</button>
                     </div>
                     <span class="shop-item-price">🪙${crop.seedCost}</span>
                     <button class="cozy-btn buy-btn" data-crop-id="${crop.id}">Mua</button>
@@ -82,17 +84,30 @@ export class ShopController {
 
             // Bind click handler for Buy Button
             const btn = row.querySelector('.buy-btn');
-            const qtyInput = row.querySelector('.shop-qty-input');
-            btn.addEventListener('click', () => {
-                const qty = parseInt(qtyInput.value, 10) || 1;
-                this.buySeed(crop.id, qty);
+            const decBtn = row.querySelector('.dec-btn');
+            const incBtn = row.querySelector('.inc-btn');
+            const qtyVal = row.querySelector('.shop-qty-value');
+
+            decBtn.addEventListener('click', () => {
+                let current = parseInt(qtyVal.innerText, 10) || 1;
+                if (current > 1) {
+                    qtyVal.innerText = current - 1;
+                    soundManager.playSFX('click');
+                }
             });
 
-            // Prevent scroll/typing errors
-            qtyInput.addEventListener('change', () => {
-                let v = parseInt(qtyInput.value, 10);
-                if (isNaN(v) || v < 1) qtyInput.value = 1;
-                if (v > 99) qtyInput.value = 99;
+            incBtn.addEventListener('click', () => {
+                let current = parseInt(qtyVal.innerText, 10) || 1;
+                if (current < 99) {
+                    qtyVal.innerText = current + 1;
+                    soundManager.playSFX('click');
+                }
+            });
+
+            btn.addEventListener('click', () => {
+                const qty = parseInt(qtyVal.innerText, 10) || 1;
+                this.buySeed(crop.id, qty);
+                qtyVal.innerText = 1;
             });
 
             this.shopItemsContainer.appendChild(row);
