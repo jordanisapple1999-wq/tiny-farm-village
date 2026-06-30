@@ -15,6 +15,23 @@ import { lotteryInstance } from './lottery.js';
 import { lotteryUIInstance } from './lotteryUI.js';
 import { soundManager } from './audio.js';
 
+// Helper to check if grid position is adjacent to water (tile type 2)
+const isAdjacentToWater = (gx, gy, grid) => {
+    const checkCoords = [
+        {x: gx - 1, y: gy},
+        {x: gx + 1, y: gy},
+        {x: gx, y: gy - 1},
+        {x: gx, y: gy + 1},
+        {x: gx, y: gy}
+    ];
+    for (const c of checkCoords) {
+        if (c.y >= 0 && c.y < grid.length && c.x >= 0 && c.x < grid[0].length) {
+            if (grid[c.y][c.x] === 2) return true; // 2 = water
+        }
+    }
+    return false;
+};
+
 class MainScene extends Phaser.Scene {
     constructor() {
         super({ key: 'MainScene' });
@@ -81,6 +98,81 @@ class MainScene extends Phaser.Scene {
         // ── 10. HTML overlay UI ──
         this.ui = new UIController(this);
 
+        // Hook and adjust input coordinates for Phaser if CSS orientation rotation is active
+        const inputManager = this.input.manager;
+        const originalTransform = inputManager.transformPointer;
+        const isCSSRotated = () => {
+            return window.innerWidth < window.innerHeight && 
+                   (('ontouchstart' in window) || (navigator.maxTouchPoints > 0));
+        };
+
+        inputManager.transformPointer = function (pointer, pageX, pageY, wasMove) {
+            if (isCSSRotated()) {
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
+
+                // Rotated input: X maps to pageY, Y maps to viewportWidth - pageX
+                const rotPageX = pageY;
+                const rotPageY = viewportWidth - pageX;
+
+                // Scale relative to canvas visual dimensions (which are swapped)
+                const x = rotPageX * (inputManager.game.scale.width / viewportHeight);
+                const y = rotPageY * (inputManager.game.scale.height / viewportWidth);
+
+                pointer.prevPosition.copy(pointer.position);
+                pointer.position.set(x, y);
+                pointer.x = x;
+                pointer.y = y;
+
+                if (wasMove && pointer.event) {
+                    pointer.velocity.set(pointer.event.movementY, -pointer.event.movementX);
+                }
+
+                return pointer;
+            } else {
+                return originalTransform.call(inputManager, pointer, pageX, pageY, wasMove);
+            }
+        };
+
+        // Re-scale bounds and refresh scale manager on screen resizing / orientation change
+        const adjustAppContainerSize = () => {
+            const appContainer = document.getElementById('app-container');
+            if (!appContainer) return;
+
+            const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+            const isPortrait = window.innerWidth < window.innerHeight;
+
+            if (isMobile && isPortrait) {
+                appContainer.style.width = `${window.innerHeight}px`;
+                appContainer.style.height = `${window.innerWidth}px`;
+                appContainer.style.left = `${window.innerWidth}px`;
+                appContainer.style.top = '0px';
+                appContainer.style.transform = 'rotate(90deg)';
+                appContainer.style.transformOrigin = 'top left';
+            } else {
+                appContainer.style.width = '';
+                appContainer.style.height = '';
+                appContainer.style.left = '';
+                appContainer.style.top = '';
+                appContainer.style.transform = '';
+                appContainer.style.transformOrigin = '';
+            }
+        };
+
+        // Run immediately to fit the app container
+        adjustAppContainerSize();
+
+        const handleResize = () => {
+            adjustAppContainerSize();
+            if (this.scale) {
+                this.scale.updateBounds();
+                this.scale.refresh();
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('orientationchange', handleResize);
+
         // Initialize BGM and Mute Control
         const btnToggleMusic = document.getElementById('btn-toggle-music');
         if (btnToggleMusic) {
@@ -132,24 +224,129 @@ class MainScene extends Phaser.Scene {
         const namingOverlay = document.getElementById('naming-overlay');
         const inputName = document.getElementById('input-player-name');
         const btnSubmit = document.getElementById('btn-naming-submit');
+        const virtualKeyboard = document.getElementById('naming-virtual-keyboard');
+        const namingBox = document.querySelector('.naming-box');
+
+        const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
         if (showNaming) {
             if (namingOverlay) namingOverlay.classList.remove('hidden');
             this.input.keyboard.enabled = false;
-            if (inputName) {
-                setTimeout(() => inputName.focus(), 100);
+            if (isMobile) {
+                if (inputName) {
+                    inputName.setAttribute('readonly', 'readonly');
+                }
+                if (virtualKeyboard) {
+                    virtualKeyboard.classList.remove('hidden');
+                }
+                if (namingBox) {
+                    namingBox.classList.add('has-keyboard');
+                }
+            } else {
+                if (inputName) {
+                    setTimeout(() => inputName.focus(), 100);
+                }
             }
         } else {
             if (namingOverlay) namingOverlay.classList.add('hidden');
             this.input.keyboard.enabled = true;
         }
 
+        // Handle Virtual Keyboard Key Presses
+        if (virtualKeyboard && inputName) {
+            const keyButtons = virtualKeyboard.querySelectorAll('.key-btn');
+            keyButtons.forEach(btn => {
+                btn.addEventListener('pointerdown', (e) => {
+                    e.preventDefault();
+                    soundManager.playSFX('click');
+                    const key = btn.getAttribute('data-key');
+                    const currentVal = inputName.value;
+
+                    if (key === 'Backspace') {
+                        inputName.value = currentVal.substring(0, currentVal.length - 1);
+                    } else {
+                        // Max length 14 check
+                        if (currentVal.length < 14) {
+                            inputName.value = currentVal + key;
+                        }
+                    }
+                });
+            });
+        }
+
+        const guideOverlay = document.getElementById('guide-overlay');
+        const btnOpenGuide = document.getElementById('btn-open-guide');
+        const btnCloseGuide = document.getElementById('btn-close-guide');
+        const btnGuideStart = document.getElementById('btn-guide-start-playing');
+
+        const openGuide = () => {
+            // Close other overlays to avoid overlapping screens
+            const overlayIds = ['inventory-overlay', 'shop-overlay', 'sell-overlay', 'auth-overlay', 'lottery-overlay'];
+            overlayIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+            if (window._phaserScene && window._phaserScene.ui) {
+                window._phaserScene.ui.closeInventory();
+            }
+
+            if (guideOverlay) guideOverlay.classList.remove('hidden');
+            this.input.keyboard.enabled = false;
+        };
+
+        const closeGuide = () => {
+            if (guideOverlay) guideOverlay.classList.add('hidden');
+            // Re-enable keyboard only if naming overlay is also closed
+            const namingActive = namingOverlay && !namingOverlay.classList.contains('hidden');
+            if (!namingActive) {
+                this.input.keyboard.enabled = true;
+            }
+            if (this.scale) {
+                this.scale.refresh();
+            }
+        };
+
+        if (btnOpenGuide) btnOpenGuide.addEventListener('click', openGuide);
+        if (btnCloseGuide) btnCloseGuide.addEventListener('click', closeGuide);
+        if (btnGuideStart) btnGuideStart.addEventListener('click', closeGuide);
+
+        // Bind keyboard shortcuts
+        this.input.keyboard.on('keydown', (e) => {
+            const namingActive = namingOverlay && !namingOverlay.classList.contains('hidden');
+            const guideActive = guideOverlay && !guideOverlay.classList.contains('hidden');
+            
+            // Ignore key hotkeys when typing in any input/textarea or naming overlay
+            if (namingActive || guideActive || (document.activeElement && 
+               (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA'))) {
+                return;
+            }
+
+            if (e.key === 'h' || e.key === 'H') {
+                openGuide();
+            } else if (e.key === '1') {
+                inventoryInstance.setActiveSlot('carrot');
+                soundManager.playSFX('click');
+            } else if (e.key === '2') {
+                inventoryInstance.setActiveSlot('tomato');
+                soundManager.playSFX('click');
+            } else if (e.key === '3') {
+                inventoryInstance.setActiveSlot('pumpkin');
+                soundManager.playSFX('click');
+            } else if (e.key === '4') {
+                inventoryInstance.setActiveSlot('water_can');
+                soundManager.playSFX('click');
+            }
+        });
+
         const submitName = () => {
             const val = inputName ? inputName.value.trim() : '';
             if (val.length > 0) {
                 this.player.setName(val);
                 if (namingOverlay) namingOverlay.classList.add('hidden');
-                this.input.keyboard.enabled = true;
+                
+                // Show Guide Overlay immediately after naming
+                openGuide();
+
                 // Save immediately to save name
                 SaveSystem.saveGame(this.player, this.farm);
             } else {
@@ -278,7 +475,10 @@ class MainScene extends Phaser.Scene {
             return;
         }
 
-        const target = this.player.getFacingGridPos();
+        const playerGridX = Math.floor(this.player.x / 32);
+        const playerGridY = Math.floor(this.player.y / 32);
+        const isNearWater = isAdjacentToWater(playerGridX, playerGridY, this.mapData.grid);
+        const activeSlot = inventoryInstance.getActiveSlot();
 
         // 1. Nearby NPC check (range = 50 px)
         let nearNpc = null;
@@ -295,7 +495,26 @@ class MainScene extends Phaser.Scene {
             return;
         }
 
-        // 2. Farm plot check
+        // 2. Water refill prompt
+        if (isNearWater && activeSlot === 'water_can') {
+            this.selectorGraphic.setPosition(playerGridX * 32, playerGridY * 32);
+            this.selectorGraphic.setVisible(true);
+            const waterAmt = inventoryInstance.getWaterAmount();
+            if (waterAmt < 3) {
+                this.ui.showPrompt(`múc nước vào Bình tưới 💧`, true);
+                if (Phaser.Input.Keyboard.JustDown(this.keyE)) {
+                    inventoryInstance.refillWater();
+                    soundManager.playSFX('water');
+                    SaveSystem.showToast("Đã múc đầy nước vào bình tưới! 💧");
+                }
+            } else {
+                this.ui.showPrompt(`Bình tưới đã đầy nước 💧`, false);
+            }
+            return;
+        }
+
+        // 3. Farm plot check
+        const target = this.player.getFacingGridPos();
         const plot = this.farm.getPlotAt(target.gridX, target.gridY);
         if (plot) {
             this.selectorGraphic.setPosition(plot.pixelX, plot.pixelY);
@@ -314,30 +533,53 @@ class MainScene extends Phaser.Scene {
             }
 
             if (plot.cropId === null) {
-                const sid  = inventoryInstance.getSelectedSeed();
-                const crop = CROPS[sid];
-                const qty  = inventoryInstance.getItemQty(`${sid}_seed`);
-                if (qty > 0) {
-                    this.ui.showPrompt(`gieo hạt ${crop.name} ${crop.icon}`, true);
+                if (activeSlot === 'water_can') {
+                    this.ui.showPrompt('Hãy chọn hạt giống để gieo trồng 🌱', false);
                 } else {
-                    this.ui.showPrompt(`gieo hạt ${crop.name} (thiếu hạt giống ❌)`, false);
+                    const crop = CROPS[activeSlot];
+                    const qty  = inventoryInstance.getItemQty(`${activeSlot}_seed`);
+                    if (qty > 0) {
+                        this.ui.showPrompt(`gieo hạt ${crop.name} ${crop.icon}`, true);
+                        if (Phaser.Input.Keyboard.JustDown(this.keyE)) {
+                            plot.plant(activeSlot);
+                        }
+                    } else {
+                        this.ui.showPrompt(`gieo hạt ${crop.name} (thiếu hạt giống ❌)`, false);
+                    }
                 }
+            } else if (plot.isDead) {
+                const deadElapsed = Math.max(0, Math.ceil(10 - (Date.now() - plot.deadTime) / 1000));
+                this.ui.showPrompt(`Cây đã chết 💀 (sẽ biến mất sau ${deadElapsed}s)`, false);
             } else if (plot.stage === 4) {
                 const crop = CROPS[plot.cropId];
                 this.ui.showPrompt(`thu hoạch ${crop.name} ${crop.icon}`, true);
+                if (Phaser.Input.Keyboard.JustDown(this.keyE)) {
+                    plot.harvest();
+                }
+            } else if (!plot.watered) {
+                const crop = CROPS[plot.cropId];
+                if (activeSlot === 'water_can') {
+                    const waterAmt = inventoryInstance.getWaterAmount();
+                    if (waterAmt > 0) {
+                        this.ui.showPrompt(`tưới nước cho ${crop.name} 💧`, true);
+                        if (Phaser.Input.Keyboard.JustDown(this.keyE)) {
+                            const success = plot.water();
+                            if (success) {
+                                inventoryInstance.useWater();
+                            }
+                        }
+                    } else {
+                        this.ui.showPrompt(`Bình tưới hết nước (Hãy đi múc nước) ❌`, false);
+                    }
+                } else {
+                    const deadRemaining = Math.max(0, Math.ceil((plot.waterDeadline - Date.now()) / 1000));
+                    this.ui.showPrompt(`Cây khô: cần tưới nước gấp! 💧 (Còn ${deadRemaining}s)`, false);
+                }
             } else {
                 const crop = CROPS[plot.cropId];
                 const elapsed = (Date.now() - plot.plantedTime) / 1000;
                 const remaining = Math.max(0, Math.ceil(crop.growTime - elapsed));
                 this.ui.showPrompt(`${crop.name} đang lớn: còn ${remaining}s ⏳`, false);
-            }
-
-            if (Phaser.Input.Keyboard.JustDown(this.keyE)) {
-                if (plot.cropId === null) {
-                    plot.plant(inventoryInstance.getSelectedSeed());
-                } else if (plot.stage === 4) {
-                    plot.harvest();
-                }
             }
             return;
         }
@@ -397,13 +639,44 @@ class MainScene extends Phaser.Scene {
             return;
         }
 
+        const playerGridX = Math.floor(this.player.x / 32);
+        const playerGridY = Math.floor(this.player.y / 32);
+        const isNearWater = isAdjacentToWater(playerGridX, playerGridY, this.mapData.grid);
+        const activeSlot = inventoryInstance.getActiveSlot();
+
+        // 1. If near water and holding watering can, refill!
+        if (isNearWater && activeSlot === 'water_can') {
+            const waterAmt = inventoryInstance.getWaterAmount();
+            if (waterAmt < 3) {
+                inventoryInstance.refillWater();
+                soundManager.playSFX('water');
+                SaveSystem.showToast("Đã múc đầy nước vào bình tưới! 💧");
+            }
+            return;
+        }
+
+        // 2. Interacting with farm plot
         const target = this.player.getFacingGridPos();
         const plot = this.farm.getPlotAt(target.gridX, target.gridY);
         if (plot && !plot.locked) {
             if (plot.cropId === null) {
-                plot.plant(inventoryInstance.getSelectedSeed());
+                if (activeSlot !== 'water_can') {
+                    plot.plant(activeSlot);
+                }
+            } else if (plot.isDead) {
+                // Do nothing for dead crop
             } else if (plot.stage === 4) {
                 plot.harvest();
+            } else if (!plot.watered && activeSlot === 'water_can') {
+                const waterAmt = inventoryInstance.getWaterAmount();
+                if (waterAmt > 0) {
+                    const success = plot.water();
+                    if (success) {
+                        inventoryInstance.useWater();
+                    }
+                } else {
+                    SaveSystem.showToast("Bình tưới hết nước! Hãy đi múc nước 💧");
+                }
             }
         }
     }

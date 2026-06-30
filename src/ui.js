@@ -210,6 +210,17 @@ export class UIController {
                 hudRight.classList.remove('menu-expanded');
             });
         }
+
+        // Bind Hotbar slot clicks/taps
+        const hotbarSlots = document.querySelectorAll('.hotbar-slot');
+        hotbarSlots.forEach(slot => {
+            slot.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                const slotName = slot.getAttribute('data-slot');
+                inventoryInstance.setActiveSlot(slotName);
+                soundManager.playSFX('click');
+            });
+        });
     }
 
     // --- HUD LOGIC ---
@@ -229,11 +240,52 @@ export class UIController {
             this.hudSeedCount.innerText = `(${seedQty})`;
         }
         if (this.hudToolName) {
-            // Context display depending on seed quantity
-            if (seedQty > 0) {
-                this.hudToolName.innerText = `Gieo hạt ${crop.name}`;
+            const activeSlot = inventoryInstance.getActiveSlot();
+            if (activeSlot === 'water_can') {
+                const waterAmt = inventoryInstance.getWaterAmount();
+                this.hudToolName.innerText = `Bình tưới (${waterAmt}/3 giọt)`;
             } else {
-                this.hudToolName.innerText = 'Cuốc đất / Tay không';
+                const activeCrop = CROPS[activeSlot];
+                const activeQty = inventoryInstance.getItemQty(`${activeSlot}_seed`);
+                if (activeQty > 0) {
+                    this.hudToolName.innerText = `Gieo hạt ${activeCrop.name}`;
+                } else {
+                    this.hudToolName.innerText = `Gieo hạt ${activeCrop.name} (Hết hạt)`;
+                }
+            }
+        }
+
+        // Sync Hotbar slot highlights
+        const activeSlot = inventoryInstance.getActiveSlot();
+        const slots = document.querySelectorAll('.hotbar-slot');
+        slots.forEach(slot => {
+            const slotName = slot.getAttribute('data-slot');
+            if (slotName === activeSlot) {
+                slot.classList.add('active');
+            } else {
+                slot.classList.remove('active');
+            }
+        });
+
+        // Sync Hotbar quantities
+        const carrotQtyEl = document.getElementById('hotbar-qty-carrot');
+        if (carrotQtyEl) carrotQtyEl.innerText = inventoryInstance.getItemQty('carrot_seed');
+
+        const tomatoQtyEl = document.getElementById('hotbar-qty-tomato');
+        if (tomatoQtyEl) tomatoQtyEl.innerText = inventoryInstance.getItemQty('tomato_seed');
+
+        const pumpkinQtyEl = document.getElementById('hotbar-qty-pumpkin');
+        if (pumpkinQtyEl) pumpkinQtyEl.innerText = inventoryInstance.getItemQty('pumpkin_seed');
+
+        const waterStateEl = document.getElementById('hotbar-water-state');
+        if (waterStateEl) {
+            const waterAmt = inventoryInstance.getWaterAmount();
+            if (waterAmt === 0) {
+                waterStateEl.innerText = '❌ Hết';
+                waterStateEl.style.color = '#f87171';
+            } else {
+                waterStateEl.innerText = `💧 x${waterAmt}`;
+                waterStateEl.style.color = '#60a5fa';
             }
         }
     }
@@ -644,6 +696,16 @@ export class UIController {
 
             let dx = touch.clientX - bx;
             let dy = touch.clientY - by;
+
+            // Rotate input coordinates by 90 degrees counter-clockwise if CSS orientation rotation is active
+            const isCSSRotated = window.innerWidth < window.innerHeight && 
+                                 (('ontouchstart' in window) || (navigator.maxTouchPoints > 0));
+            if (isCSSRotated) {
+                const temp = dx;
+                dx = dy;
+                dy = -temp;
+            }
+
             const dist = Math.sqrt(dx * dx + dy * dy);
 
             if (dist > maxDist) {

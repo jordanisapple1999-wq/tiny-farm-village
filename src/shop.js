@@ -59,15 +59,22 @@ export class ShopController {
         Object.values(CROPS).forEach(crop => {
             const row = document.createElement('div');
             row.className = 'shop-item-row';
+            
+            const ownedQty = inventoryInstance.getItemQty(`${crop.id}_seed`);
+
             row.innerHTML = `
                 <div class="shop-item-info">
                     <span class="shop-item-icon">${crop.icon}</span>
                     <div class="shop-item-details">
                         <span class="shop-item-name">Hạt giống ${crop.name}</span>
                         <span class="shop-item-sub">Thu hoạch sau: ${crop.growTime} giây | Bán lại: 🪙${crop.sellPrice}</span>
+                        <span class="shop-item-owned">Đang có trong túi: <strong>${ownedQty}</strong> hạt</span>
                     </div>
                 </div>
                 <div class="shop-item-actions">
+                    <div class="shop-qty-selector">
+                        <input type="number" min="1" max="99" value="1" class="shop-qty-input" data-crop-id="${crop.id}">
+                    </div>
                     <span class="shop-item-price">🪙${crop.seedCost}</span>
                     <button class="cozy-btn buy-btn" data-crop-id="${crop.id}">Mua</button>
                 </div>
@@ -75,7 +82,18 @@ export class ShopController {
 
             // Bind click handler for Buy Button
             const btn = row.querySelector('.buy-btn');
-            btn.addEventListener('click', () => this.buySeed(crop.id));
+            const qtyInput = row.querySelector('.shop-qty-input');
+            btn.addEventListener('click', () => {
+                const qty = parseInt(qtyInput.value, 10) || 1;
+                this.buySeed(crop.id, qty);
+            });
+
+            // Prevent scroll/typing errors
+            qtyInput.addEventListener('change', () => {
+                let v = parseInt(qtyInput.value, 10);
+                if (isNaN(v) || v < 1) qtyInput.value = 1;
+                if (v > 99) qtyInput.value = 99;
+            });
 
             this.shopItemsContainer.appendChild(row);
         });
@@ -112,15 +130,16 @@ export class ShopController {
         }
     }
 
-    buySeed(cropId) {
+    buySeed(cropId, quantity = 1) {
         const crop = CROPS[cropId];
         if (!crop) return;
 
-        if (inventoryInstance.getCoins() >= crop.seedCost) {
-            inventoryInstance.spendCoins(crop.seedCost);
-            inventoryInstance.addItem(`${cropId}_seed`, 1);
+        const totalCost = crop.seedCost * quantity;
+        if (inventoryInstance.getCoins() >= totalCost) {
+            inventoryInstance.spendCoins(totalCost);
+            inventoryInstance.addItem(`${cropId}_seed`, quantity);
             soundManager.playSFX('coin');
-            SaveSystem.showToast(`Đã mua 1 Hạt giống ${crop.name}! 🥕`);
+            SaveSystem.showToast(`Đã mua ${quantity} Hạt giống ${crop.name}! 🥕`);
             this.renderSeedShop();
         } else {
             soundManager.playSFX('error');
@@ -192,13 +211,16 @@ export class ShopController {
                 <div class="shop-item-actions">
                     <span class="shop-item-price">🪙${crop.sellPrice} / cái</span>
                     <button class="cozy-btn green-btn sell-btn" ${quantity <= 0 ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''} data-crop-id="${crop.id}">Bán (1)</button>
+                    <button class="cozy-btn orange-btn sell-all-type-btn" ${quantity <= 0 ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''} data-crop-id="${crop.id}">Bán hết</button>
                 </div>
             `;
 
-            // Bind click handler
+            // Bind click handlers
             const btn = row.querySelector('.sell-btn');
+            const btnAll = row.querySelector('.sell-all-type-btn');
             if (quantity > 0) {
                 btn.addEventListener('click', () => this.sellCrop(crop.id));
+                btnAll.addEventListener('click', () => this.sellAllOfType(crop.id));
             }
 
             this.sellItemsContainer.appendChild(row);
@@ -226,6 +248,22 @@ export class ShopController {
             inventoryInstance.addCoins(crop.sellPrice);
             soundManager.playSFX('coin');
             SaveSystem.showToast(`Đã bán 1 ${crop.name}! Thu về 🪙${crop.sellPrice}`);
+            this.renderSellMenu();
+        }
+    }
+
+    sellAllOfType(cropId) {
+        const crop = CROPS[cropId];
+        if (!crop) return;
+
+        const cropKey = `${crop.id}_harvested`;
+        const quantity = inventoryInstance.getItemQty(cropKey);
+        if (quantity > 0) {
+            inventoryInstance.removeItem(cropKey, quantity);
+            const earn = crop.sellPrice * quantity;
+            inventoryInstance.addCoins(earn);
+            soundManager.playSFX('coin');
+            SaveSystem.showToast(`Đã bán toàn bộ ${quantity} ${crop.name} tươi! Thu về 🪙${earn}`);
             this.renderSellMenu();
         }
     }

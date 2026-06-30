@@ -1182,6 +1182,81 @@ html, body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
+/* ── Virtual Keyboard for Naming Overlay ── */
+.naming-box.has-keyboard {
+    width: 640px;
+    max-width: 95vw;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 24px;
+}
+
+.naming-left-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.naming-keyboard-container {
+    flex: 1.4;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 100002;
+}
+
+.keyboard-row {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+}
+
+.key-btn {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.95rem;
+    height: 38px;
+    flex: 1;
+    cursor: pointer;
+    outline: none;
+    border: 2px solid var(--wood-dark);
+    border-radius: 6px;
+    background: linear-gradient(to bottom, var(--wood-accent), var(--wood-light));
+    color: var(--text-dark);
+    box-shadow: 0 3px 0 var(--wood-dark);
+    transition: transform 0.05s, box-shadow 0.05s;
+    user-select: none;
+    -webkit-user-select: none;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.key-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 0 var(--wood-dark);
+}
+
+.key-btn.control-key {
+    background: linear-gradient(to bottom, #d97706, #b45309);
+    color: #ffffff;
+    font-size: 0.85rem;
+    border-color: var(--wood-dark);
+}
+
+.key-btn.delete-key {
+    flex: 1.8;
+}
+
+.key-btn.space-key {
+    flex: 2.2;
+}
+
 /* ── AUTH / CLOUD SAVE SYSTEM ── */
 .auth-box {
     width: min(440px, 94vw);
@@ -1520,13 +1595,14 @@ body.mobile-device {
         transition: all 0.25s ease;
     }
 
-    /* Hide standard HUD buttons by default when mobile menu is NOT expanded (except inventory button) */
-    .hud-right:not(.menu-expanded) .cozy-btn:not(#btn-mobile-menu-toggle):not(#btn-open-inventory) {
+    /* Hide standard HUD buttons by default when mobile menu is NOT expanded (except inventory and guide buttons) */
+    .hud-right:not(.menu-expanded) .cozy-btn:not(#btn-mobile-menu-toggle):not(#btn-open-inventory):not(#btn-open-guide) {
         display: none !important;
     }
 
-    /* Force show inventory button by default on mobile */
-    .hud-right .cozy-btn#btn-open-inventory {
+    /* Force show inventory and guide buttons by default on mobile */
+    .hud-right .cozy-btn#btn-open-inventory,
+    .hud-right .cozy-btn#btn-open-guide {
         display: inline-flex !important;
     }
 
@@ -1880,7 +1956,218 @@ body:has(#naming-overlay:not(.hidden)) #mobile-action-zone {
 /* Show only when body.mobile-device is active AND screen is portrait */
 @media screen and (orientation: portrait) {
     body.mobile-device #rotate-device-overlay {
+        display: none !important;
+    }
+
+    body.mobile-device #app-container {
+        position: fixed;
+        width: 100svh;
+        height: 100svw;
+        left: 100svw;
+        top: 0;
+        transform: rotate(90deg);
+        transform-origin: top left;
+    }
+
+    /* Swap viewport units (vw/vh) for modal panels to preserve aspect ratio in rotated layout */
+    body.mobile-device .dialogue-box {
+        width: 95svh !important;
+    }
+    body.mobile-device .inventory-box {
+        width: 95svh !important;
+    }
+    body.mobile-device .shop-box {
+        width: 95svh !important;
+    }
+    body.mobile-device .lottery-box {
+        width: 95svh !important;
+        max-height: 85svw !important;
+    }
+    body.mobile-device #toast-notification {
+        max-width: 90svh !important;
+    }
+
+    /* Apply landscape compact layout styles inside rotated portrait mode */
+    body.mobile-device .cozy-panel {
+        padding: 10px 16px !important;
+        gap: 8px !important;
+        max-height: 94svw !important;
+    }
+    
+    body.mobile-device .panel-header {
+        padding-bottom: 6px !important;
+    }
+    
+    body.mobile-device .panel-header h2 {
+        font-size: 1rem !important;
+    }
+
+    body.mobile-device .panel-footer {
+        padding-top: 6px !important;
+        font-size: 0.75rem !important;
+    }
+
+    /* Inventory Grid layout in portrait-rotated-landscape */
+    body.mobile-device .inventory-box {
+        width: 90svh !important;
+        max-width: 600px !important;
+    }
+    body.mobile-device .inventory-grid {
+        grid-template-columns: repeat(6, 1fr) !important;
+        gap: 8px !important;
+        padding: 8px !important;
+        max-height: 140px !important;
+    }
+    body.mobile-device .inventory-slot {
+        aspect-ratio: 1.1 !important;
+    }
+    body.mobile-device .item-icon {
+        font-size: 22px !important;
+    }
+    
+    /* Shop side-by-side layout in portrait-rotated-landscape */
+    body.mobile-device .shop-box {
+        width: 90svh !important;
+        max-width: 650px !important;
+    }
+    body.mobile-device .shop-content-wrapper {
+        flex-direction: row !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+    }
+    body.mobile-device .npc-shop-intro {
+        flex-direction: column !important;
+        width: 150px !important;
+        justify-content: center !important;
+        text-align: center !important;
+        padding: 10px !important;
+        flex-shrink: 0 !important;
+    }
+    body.mobile-device .npc-shop-intro .dialogue-avatar {
+        width: 44px !important;
+        height: 44px !important;
+        font-size: 24px !important;
+    }
+    body.mobile-device .shop-speech-bubble {
+        font-size: 0.78rem !important;
+        margin-top: 4px;
+    }
+    body.mobile-device .shop-items-list {
+        flex-grow: 1 !important;
+        max-height: 150px !important;
+        padding: 8px !important;
+    }
+    body.mobile-device .shop-item-row {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 6px 10px !important;
+    }
+    body.mobile-device .shop-item-icon {
+        font-size: 20px !important;
+        padding: 2px !important;
+    }
+    body.mobile-device .shop-item-name {
+        font-size: 0.85rem !important;
+    }
+    
+    /* Dialogue Panel overrides */
+    body.mobile-device .dialogue-box {
+        width: 92svh !important;
+        bottom: 8px !important;
+    }
+    body.mobile-device .dialogue-body {
+        padding: 6px 12px !important;
+        min-height: 48px !important;
+        font-size: 0.88rem !important;
+    }
+    body.mobile-device .dialogue-header {
+        padding-bottom: 6px !important;
+    }
+    body.mobile-device .dialogue-avatar {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 20px !important;
+    }
+
+    /* Auth modal layout */
+    body.mobile-device .auth-box {
+        width: 80svh !important;
+        max-width: 500px !important;
+    }
+    body.mobile-device .auth-status-card {
+        padding: 8px 12px !important;
+        gap: 6px !important;
+    }
+    body.mobile-device .auth-form-section {
+        gap: 8px !important;
+    }
+    body.mobile-device .auth-input-group {
+        gap: 4px !important;
+    }
+    body.mobile-device .auth-input {
+        padding: 6px 10px !important;
+        font-size: 0.88rem !important;
+    }
+    body.mobile-device .auth-textarea {
+        height: 80px !important;
+    }
+
+    /* Character naming box */
+    body.mobile-device .naming-box {
+        padding: 16px 20px !important;
+        width: 380px !important;
+    }
+    body.mobile-device .naming-box.has-keyboard {
+        width: 90svh !important;
+        max-width: 680px !important;
+        flex-direction: row !important;
+        gap: 16px !important;
+        padding: 16px 20px !important;
         display: flex !important;
+    }
+    body.mobile-device .naming-title {
+        font-size: 1.3rem !important;
+        margin-bottom: 8px !important;
+    }
+    body.mobile-device .naming-desc {
+        font-size: 0.82rem !important;
+        margin-bottom: 12px !important;
+    }
+    body.mobile-device .naming-box.has-keyboard .naming-desc {
+        display: none !important;
+    }
+    body.mobile-device .naming-input {
+        padding: 8px 12px !important;
+        font-size: 0.95rem !important;
+        margin-bottom: 14px !important;
+    }
+    body.mobile-device .naming-box.has-keyboard .naming-input {
+        margin-bottom: 10px !important;
+        font-size: 0.85rem !important;
+        padding: 6px 10px !important;
+    }
+    body.mobile-device .start-game-btn {
+        padding: 10px !important;
+        font-size: 0.95rem !important;
+    }
+    body.mobile-device .naming-box.has-keyboard .start-game-btn {
+        padding: 8px !important;
+        font-size: 0.85rem !important;
+    }
+
+    /* Lottery specific swapped values */
+    body.mobile-device .lottery-box {
+        width: 95svh !important;
+        max-height: 96svw !important;
+    }
+    body.mobile-device .tickets-list-scroll,
+    body.mobile-device .check-list-scroll,
+    body.mobile-device .results-list-scroll {
+        max-height: 64px !important;
+    }
+    body.mobile-device .prize-list {
+        max-height: 64px !important;
     }
 }
 
@@ -2232,5 +2519,264 @@ body.mobile-device .lotto-buy-btn {
 body.mobile-device .ticket-item {
     padding: 2px 6px !important;
     font-size: 0.72rem !important;
+}
+
+/* ── Shop & Guide Custom Enhancements ── */
+.shop-qty-selector {
+    display: flex;
+    align-items: center;
+    margin-right: 10px;
+}
+
+.shop-qty-input {
+    width: 48px;
+    height: 32px;
+    text-align: center;
+    border: 2px solid var(--wood-dark);
+    border-radius: 6px;
+    background: #fff6eb;
+    color: var(--text-dark);
+    font-weight: 800;
+    font-size: 0.95rem;
+    outline: none;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: var(--font-body);
+}
+
+/* Hide arrow spinner in number input */
+.shop-qty-input::-webkit-outer-spin-button,
+.shop-qty-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.shop-qty-input[type=number] {
+    -moz-appearance: textfield;
+}
+
+.shop-item-owned {
+    display: block;
+    font-size: 0.76rem;
+    color: #4b2e1e;
+    margin-top: 4px;
+    opacity: 0.9;
+}
+
+.lotto-balance-info {
+    font-family: var(--font-heading);
+    font-size: 0.9rem;
+    color: #ffd875;
+    margin: 4px 0 8px 0;
+    text-shadow: 1px 1px 0 var(--wood-dark);
+    text-align: center;
+}
+
+/* Guide overlay styles */
+.guide-box {
+    width: min(580px, 94vw);
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+}
+
+.guide-scrollable-content {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 8px;
+    margin: 12px 0;
+    max-height: 52vh;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.guide-section {
+    background: rgba(43, 24, 11, 0.25);
+    border: 1.5px solid var(--wood-accent);
+    border-radius: 8px;
+    padding: 12px 14px;
+    box-shadow: inset 0 1px 5px rgba(0,0,0,0.2);
+}
+
+.guide-section h3 {
+    margin: 0 0 6px 0;
+    font-family: var(--font-heading);
+    font-size: 1.05rem;
+    color: #ffd875;
+    text-shadow: 1px 1px 0 var(--wood-dark);
+}
+
+.guide-section p {
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    line-height: 1.45;
+    color: #fff6eb;
+}
+
+.guide-section strong {
+    color: #ffdd99;
+}
+
+/* Portrait Mobile Responsive for Guide and Quantities */
+body.mobile-device .guide-box {
+    width: 90svh !important;
+    max-height: 94svw !important;
+    padding: 12px 16px !important;
+}
+body.mobile-device .guide-scrollable-content {
+    max-height: 48svw !important;
+    margin: 6px 0 !important;
+    gap: 8px !important;
+}
+body.mobile-device .guide-section {
+    padding: 8px 10px !important;
+}
+body.mobile-device .guide-section h3 {
+    font-size: 0.88rem !important;
+}
+body.mobile-device .guide-section p {
+    font-size: 0.78rem !important;
+    line-height: 1.35 !important;
+}
+body.mobile-device .lotto-balance-info {
+    font-size: 0.72rem !important;
+    margin: 2px 0 4px 0 !important;
+}
+body.mobile-device .shop-qty-input {
+    width: 38px !important;
+    height: 26px !important;
+    font-size: 0.8rem !important;
+}
+body.mobile-device .shop-item-owned {
+    font-size: 0.68rem !important;
+}
+
+/* ── HOTBAR (QUICK SELECTOR) ── */
+#game-hotbar {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    background: rgba(43, 24, 11, 0.88);
+    border: 3px solid var(--wood-light);
+    border-radius: 12px;
+    padding: 6px 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.1);
+    z-index: 100;
+    pointer-events: auto;
+    font-family: var(--font-body);
+}
+
+.hotbar-slot {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, var(--wood-mid), var(--wood-dark));
+    border: 2px solid var(--wood-accent);
+    border-radius: 8px;
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.15s;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.hotbar-slot:hover {
+    transform: scale(1.05);
+    border-color: var(--wood-highlight);
+}
+
+.hotbar-slot.active {
+    border-color: #ffd875;
+    box-shadow: 0 0 12px rgba(253, 224, 71, 0.6), inset 0 0 4px rgba(253, 224, 71, 0.4);
+    transform: scale(1.08);
+}
+
+.hotbar-key {
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: rgba(255,246,235,0.6);
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.8);
+}
+
+.hotbar-icon {
+    font-size: 1.6rem;
+    line-height: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hotbar-img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+
+.hotbar-qty {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 0.72rem;
+    font-weight: 900;
+    color: #fff6eb;
+    background: rgba(0, 0, 0, 0.45);
+    padding: 1px 4px;
+    border-radius: 4px;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.85);
+}
+
+#hotbar-water-state {
+    font-size: 0.62rem;
+    padding: 1px 3px;
+}
+
+/* Hide mobile controls when modals are open (also cover hotbar) */
+body:has(#inventory-overlay:not(.hidden)) #game-hotbar,
+body:has(#auth-overlay:not(.hidden)) #game-hotbar,
+body:has(#shop-overlay:not(.hidden)) #game-hotbar,
+body:has(#sell-overlay:not(.hidden)) #game-hotbar,
+body:has(#lottery-overlay:not(.hidden)) #game-hotbar,
+body:has(#dialogue-overlay:not(.hidden)) #game-hotbar,
+body:has(#naming-overlay:not(.hidden)) #game-hotbar {
+    display: none !important;
+}
+
+/* Portrait Mobile Responsive overrides for Hotbar */
+body.mobile-device #game-hotbar {
+    bottom: 12px !important;
+    padding: 4px 6px !important;
+    gap: 6px !important;
+}
+
+body.mobile-device .hotbar-slot {
+    width: 44px !important;
+    height: 44px !important;
+}
+
+body.mobile-device .hotbar-icon {
+    font-size: 1.3rem !important;
+}
+
+body.mobile-device .hotbar-img {
+    width: 22px !important;
+    height: 22px !important;
+}
+
+body.mobile-device .hotbar-qty {
+    font-size: 0.65rem !important;
+}
+
+body.mobile-device .hotbar-key {
+    display: none;
 }
 

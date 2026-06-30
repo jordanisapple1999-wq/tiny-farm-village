@@ -20,11 +20,25 @@ export class FarmPlot {
         this.stage = 0;                // 0: Empty, 1: Seed, 2: Sprout, 3: Growing, 4: Ready
         this.locked = plotData.locked ?? false; // Locked status
 
+        this.watered = plotData.watered ?? false;
+        this.isDead = plotData.isDead ?? false;
+        this.deadTime = plotData.deadTime ?? null;
+        this.waterDeadline = plotData.waterDeadline ?? null;
+
         // Sprite overlay representing the crop
         // Align sprite perfectly with the 32x32 dirt tile center
         this.sprite = scene.add.sprite(this.pixelX + 16, this.pixelY + 16, 'crop_seed');
         this.sprite.setOrigin(0.5, 0.5);
         this.sprite.setVisible(false); // Hidden when empty
+
+        // Bouncing water drop indicator
+        this.waterDropIcon = scene.add.text(this.pixelX + 16, this.pixelY - 4, '💧', {
+            fontSize: '11px',
+            align: 'center'
+        });
+        this.waterDropIcon.setOrigin(0.5, 0.5);
+        this.waterDropIcon.setDepth(this.pixelY + 30);
+        this.waterDropIcon.setVisible(false);
 
         // Draw lock overlay and lock icon on top of the dirt tile if locked
         this.lockOverlay = scene.add.graphics();
@@ -54,10 +68,14 @@ export class FarmPlot {
             this.cropId = cropId;
             this.plantedTime = Date.now();
             this.stage = 1;
+            this.watered = false;
+            this.isDead = false;
+            this.deadTime = null;
+            this.waterDeadline = Date.now() + 60000; // 1 minute to water it
             
             this.updateVisual();
             soundManager.playSFX('plant');
-            SaveSystem.showToast(`Đã gieo Hạt giống ${CROPS[cropId].name}!  🌱`);
+            SaveSystem.showToast(`Đã gieo Hạt giống ${CROPS[cropId].name}! Hãy tưới nước ngay! 💧`);
             return true;
         } else {
             soundManager.playSFX('error');
@@ -66,8 +84,21 @@ export class FarmPlot {
         }
     }
 
+    water() {
+        if (this.cropId === null || this.isDead || this.watered) return false;
+
+        this.watered = true;
+        this.waterDeadline = null;
+        this.plantedTime = Date.now(); // Growth timer restarts from watering moment!
+        
+        this.updateVisual();
+        soundManager.playSFX('water');
+        SaveSystem.showToast(`Đã tưới nước cho ${CROPS[this.cropId].name}! Cây bắt đầu lớn 🌱`);
+        return true;
+    }
+
     harvest() {
-        if (this.cropId === null || this.stage !== 4) return false;
+        if (this.cropId === null || this.stage !== 4 || this.isDead) return false;
 
         const crop = CROPS[this.cropId];
         if (crop) {
@@ -84,6 +115,10 @@ export class FarmPlot {
             this.cropId = null;
             this.plantedTime = null;
             this.stage = 0;
+            this.watered = false;
+            this.isDead = false;
+            this.deadTime = null;
+            this.waterDeadline = null;
             this.updateVisual();
             return true;
         }
@@ -120,13 +155,64 @@ export class FarmPlot {
         });
     }
 
-
-
     update() {
-        if (this.cropId === null || this.stage === 4) return;
+        if (this.cropId === null) return;
+
+        // Handle dead crop automatic removal
+        if (this.isDead) {
+            const deadElapsed = (Date.now() - this.deadTime) / 1000;
+            if (deadElapsed >= 10) {
+                // Auto-clear
+                this.cropId = null;
+                this.plantedTime = null;
+                this.stage = 0;
+                this.watered = false;
+                this.isDead = false;
+                this.deadTime = null;
+                this.waterDeadline = null;
+                this.sprite.clearTint();
+                this.sprite.setAngle(0);
+                this.updateVisual();
+                
+                // Save game state
+                if (window._phaserScene) {
+                    SaveSystem.saveGame(window._phaserScene.player, window._phaserScene.farm);
+                }
+            }
+            return;
+        }
 
         const crop = CROPS[this.cropId];
         if (!crop) return;
+
+        // Check dry/watered conditions
+        if (!this.watered) {
+            // Sinusoidal bounce on water drop text indicator
+            if (this.waterDropIcon) {
+                this.waterDropIcon.setY(this.pixelY - 4 + Math.sin(Date.now() * 0.006) * 3);
+            }
+
+            if (Date.now() >= this.waterDeadline) {
+                // Crop dies!
+                this.isDead = true;
+                this.deadTime = Date.now();
+                this.stage = 0;
+                this.watered = false;
+                this.waterDeadline = null;
+                this.updateVisual();
+                soundManager.playSFX('error');
+                SaveSystem.showToast(`Cây đã chết do không được tưới nước kịp thời! 💀`);
+
+                // Save game state
+                if (window._phaserScene) {
+                    SaveSystem.saveGame(window._phaserScene.player, window._phaserScene.farm);
+                }
+            }
+            return;
+        }
+
+        // Standard growth loop (runs only when watered)
+        if (this.stage === 4) return;
 
         const elapsedSeconds = (Date.now() - this.plantedTime) / 1000;
         const totalGrowTime = crop.growTime;
@@ -168,19 +254,34 @@ export class FarmPlot {
 
         if (this.locked) {
             this.sprite.setVisible(false);
+            if (this.waterDropIcon) this.waterDropIcon.setVisible(false);
             return;
         }
 
-        if (this.cropId === null || this.stage === 0) {
+        // Toggle water warning icon visibility
+        if (this.waterDropIcon) {
+            const needsWaterPrompt = this.cropId !== null && !this.watered && !this.isDead;
+            this.waterDropIcon.setVisible(needsWaterPrompt);
+        }
+
+        if (this.cropId === null || (this.stage === 0 && !this.isDead)) {
             this.sprite.setVisible(false);
+            this.sprite.clearTint();
+            this.sprite.setAngle(0);
             return;
         }
 
         this.sprite.setVisible(true);
 
-        // Check if the AI crops spritesheet is loaded and has enough frames
-        // Spritesheet layout: 3 rows (carrot/tomato/pumpkin) × 4 cols (stage 1-4)
-        // Each 256×256 frame → total 1024×768 or similar
+        // Apply dead crop visual style (brown tint and tilted angle)
+        if (this.isDead) {
+            this.sprite.setTint(0x78350f); // Withered brown color
+            this.sprite.setAngle(90);       // Rotated/knocked over
+        } else {
+            this.sprite.clearTint();
+            this.sprite.setAngle(0);
+        }
+
         const useAICrops = this._checkAICropsReady();
 
         if (useAICrops) {
@@ -188,26 +289,23 @@ export class FarmPlot {
             // Row 0=Carrot, Row 1=Tomato, Row 2=Watermelon(unused), Row 3=Pumpkin
             const cropRows = { carrot: 0, tomato: 1, pumpkin: 3 };
             const row = cropRows[this.cropId] ?? 0;
-            // Column mapping: stage 1→col0, 2→col1, 3→col2, 4→col3
-            // The spritesheet has 4 columns (no empty col 0), so offset stage by -1
-            const col = this.stage - 1; // 0=seed, 1=sprout, 2=growing, 3=ready
+            // Column mapping: if dead show stage 3 (withered plant), otherwise active stage
+            const col = this.isDead ? 2 : (this.stage - 1);
             const totalCols = 4;
             const frameIndex = row * totalCols + col;
 
             this.sprite.setTexture('img_crops', frameIndex);
 
             // Apply size scaling and depth offsets based on growth stage
-            // Using precise 0.125 scale (1/8 of 256px = exactly 32px) to prevent pixel art distortion
             this.sprite.setScale(0.125);
             this.sprite.setX(this.pixelX + 16);
 
-            if (this.stage === 1 || this.stage === 2) {
-                this.sprite.setY(this.pixelY + 16); // Centered on tile
-                this.sprite.setDepth(this.pixelY + 16);
-            } else {
-                // Growing or Ready crops: offset slightly upwards for natural layering
+            if (this.isDead || this.stage === 3 || this.stage === 4) {
                 this.sprite.setY(this.pixelY + 12); // Shifted 4px up
                 this.sprite.setDepth(this.pixelY + 20);
+            } else {
+                this.sprite.setY(this.pixelY + 16); // Centered on tile
+                this.sprite.setDepth(this.pixelY + 16);
             }
         } else {
             // Fallback to canvas textures (32×32 each)
@@ -216,19 +314,23 @@ export class FarmPlot {
             this.sprite.setY(this.pixelY + 16);
             this.sprite.setDepth(this.pixelY + 16);
 
-            switch (this.stage) {
-                case 1:
-                    this.sprite.setTexture('crop_seed');
-                    break;
-                case 2:
-                    this.sprite.setTexture('crop_sprout');
-                    break;
-                case 3:
-                    this.sprite.setTexture(`${this.cropId}_growing`);
-                    break;
-                case 4:
-                    this.sprite.setTexture(`${this.cropId}_ready`);
-                    break;
+            if (this.isDead) {
+                this.sprite.setTexture(`${this.cropId}_growing`);
+            } else {
+                switch (this.stage) {
+                    case 1:
+                        this.sprite.setTexture('crop_seed');
+                        break;
+                    case 2:
+                        this.sprite.setTexture('crop_sprout');
+                        break;
+                    case 3:
+                        this.sprite.setTexture(`${this.cropId}_growing`);
+                        break;
+                    case 4:
+                        this.sprite.setTexture(`${this.cropId}_ready`);
+                        break;
+                }
             }
         }
     }
@@ -239,21 +341,19 @@ export class FarmPlot {
         const tex = this.scene.textures.get('img_crops');
         if (!tex || !tex.source || !tex.source[0]) return false;
         const src = tex.source[0];
-        // Expect at least 4 columns × 256px wide = 1024px min width
-        // and at least 3 rows × 256px tall = 768px min height
         if (src.width < 256 || src.height < 256) return false;
-        // Check total frame count: spritesheet is 4 rows × 4 cols = 16 frames
-        // (carrot=row0, tomato=row1, unused=row2, pumpkin=row3)
-        const frameCount = tex.frameTotal - 1; // subtract 1 for the '__BASE' frame
+        const frameCount = tex.frameTotal - 1;
         return frameCount >= 16;
     }
 
-    // Get time remaining string (e.g. "Còn 5s")
     getGrowthHint() {
         if (this.cropId === null) return 'Đất trống (Trồng hạt)';
+        if (this.isDead) return 'Cây đã chết do thiếu nước! 💀';
         if (this.stage === 4) return `${CROPS[this.cropId].name} đã sẵn sàng thu hoạch!`;
 
         const crop = CROPS[this.cropId];
+        if (!this.watered) return `${crop.name} (Khô héo, cần tưới nước gấp! 💧)`;
+
         const elapsed = (Date.now() - this.plantedTime) / 1000;
         const remaining = Math.max(0, Math.ceil(crop.growTime - elapsed));
         
@@ -266,7 +366,11 @@ export class FarmPlot {
             cropId: this.cropId,
             plantedTime: this.plantedTime,
             stage: this.stage,
-            locked: this.locked
+            locked: this.locked,
+            watered: this.watered,
+            isDead: this.isDead,
+            deadTime: this.deadTime,
+            waterDeadline: this.waterDeadline
         };
     }
 
@@ -276,6 +380,10 @@ export class FarmPlot {
         this.plantedTime = data.plantedTime;
         this.stage = data.stage;
         this.locked = data.locked ?? false;
+        this.watered = data.watered ?? false;
+        this.isDead = data.isDead ?? false;
+        this.deadTime = data.deadTime ?? null;
+        this.waterDeadline = data.waterDeadline ?? null;
         this.updateVisual();
     }
 }

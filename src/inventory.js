@@ -18,6 +18,12 @@ export class Inventory {
 
         // Track selected seed type for planting (default: carrot)
         this.selectedSeed = 'carrot';
+
+        // Watering can charges (0 to 3)
+        this.waterAmount = 0;
+
+        // Active hotbar slot: 'carrot', 'tomato', 'pumpkin', 'water_can'
+        this.activeHotbarSlot = 'carrot';
     }
 
     getCoins() {
@@ -67,8 +73,39 @@ export class Inventory {
     setSelectedSeed(cropId) {
         if (CROPS[cropId]) {
             this.selectedSeed = cropId;
+            this.activeHotbarSlot = cropId;
             this.triggerUpdate();
         }
+    }
+
+    getActiveSlot() {
+        return this.activeHotbarSlot;
+    }
+
+    setActiveSlot(slot) {
+        this.activeHotbarSlot = slot;
+        if (slot === 'carrot' || slot === 'tomato' || slot === 'pumpkin') {
+            this.selectedSeed = slot;
+        }
+        this.triggerUpdate();
+    }
+
+    getWaterAmount() {
+        return this.waterAmount || 0;
+    }
+
+    useWater() {
+        if (this.waterAmount > 0) {
+            this.waterAmount--;
+            this.triggerUpdate();
+            return true;
+        }
+        return false;
+    }
+
+    refillWater() {
+        this.waterAmount = 3;
+        this.triggerUpdate();
     }
 
     // Helper to format inventory for 16 slots UI display
@@ -120,7 +157,9 @@ export class Inventory {
         return {
             coins: this.coins,
             items: this.items,
-            selectedSeed: this.selectedSeed
+            selectedSeed: this.selectedSeed,
+            waterAmount: this.waterAmount,
+            activeHotbarSlot: this.activeHotbarSlot
         };
     }
 
@@ -129,7 +168,10 @@ export class Inventory {
         if (typeof data.coins === 'number') this.coins = data.coins;
         if (data.items) this.items = { ...this.items, ...data.items };
         if (data.selectedSeed) this.selectedSeed = data.selectedSeed;
+        if (data.waterAmount !== undefined) this.waterAmount = data.waterAmount;
+        if (data.activeHotbarSlot !== undefined) this.activeHotbarSlot = data.activeHotbarSlot;
         this.triggerUpdate();
     }
 }
 export const inventoryInstance = new Inventory();
+window._inventory = inventoryInstance;

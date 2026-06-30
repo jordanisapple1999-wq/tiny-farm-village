@@ -1,6 +1,7 @@
 // Tiny Farm Village - Lottery System UI Overlay Binder & Animations
 import { lotteryInstance } from './lottery.js';
 import { SaveSystem } from './save.js';
+import { inventoryInstance } from './inventory.js';
 
 export class LotteryUI {
     constructor() {
@@ -290,6 +291,12 @@ export class LotteryUI {
     }
 
     update() {
+        // Update Coins indicator
+        const coinsDisplay = document.getElementById('lotto-player-coins');
+        if (coinsDisplay) {
+            coinsDisplay.innerText = inventoryInstance.getCoins();
+        }
+
         // 1. Timer Update
         const timeStr = this.formatTime(lotteryInstance.timeLeft);
         if (this.countdownSign) {

@@ -116,6 +116,30 @@
     <!-- Phaser Game Canvas -->
     <div id="game-container"></div>
 
+    <!-- ── HOTBAR (QUICK SELECTOR) ── -->
+    <div id="game-hotbar">
+        <div class="hotbar-slot active" data-slot="carrot" title="Hạt Cà rốt [Phím 1]">
+            <span class="hotbar-key">1</span>
+            <span class="hotbar-icon">🥕🌱</span>
+            <span class="hotbar-qty" id="hotbar-qty-carrot">2</span>
+        </div>
+        <div class="hotbar-slot" data-slot="tomato" title="Hạt Cà chua [Phím 2]">
+            <span class="hotbar-key">2</span>
+            <span class="hotbar-icon">🍅🌱</span>
+            <span class="hotbar-qty" id="hotbar-qty-tomato">2</span>
+        </div>
+        <div class="hotbar-slot" data-slot="pumpkin" title="Hạt Bí ngô [Phím 3]">
+            <span class="hotbar-key">3</span>
+            <span class="hotbar-icon">🎃🌱</span>
+            <span class="hotbar-qty" id="hotbar-qty-pumpkin">2</span>
+        </div>
+        <div class="hotbar-slot" data-slot="water_can" title="Bình tưới nước [Phím 4]">
+            <span class="hotbar-key">4</span>
+            <span class="hotbar-icon"><img src="assets/objects/watering_can.png" class="hotbar-img" alt="Bình tưới"></span>
+            <span class="hotbar-qty" id="hotbar-water-state">❌ Hết</span>
+        </div>
+    </div>
+
     <!-- ── COPYRIGHT FOOTER ───────────────────────────────── -->
     <div id="game-copyright">Tiny Farm Village được phát triển bởi Jordan Nguyen</div>
 
@@ -139,6 +163,7 @@
 
         <div class="hud-right">
             <button id="btn-mobile-menu-toggle" class="cozy-btn mobile-only" title="Menu">⚙️ <span>Menu</span></button>
+            <button id="btn-open-guide"     class="cozy-btn" title="Hướng dẫn (H)">❓ <span>Hướng dẫn</span></button>
             <button id="btn-toggle-music"   class="cozy-btn music-btn" title="Bật/Tắt nhạc nền (M)">🎵 <span>Nhạc</span></button>
             <button id="btn-open-auth"      class="cozy-btn cloud-btn" title="Lưu đám mây (C)">☁️ <span>Đám mây</span></button>
             <!-- ── LOTTERY HUD BADGE ── -->
@@ -244,10 +269,79 @@
     <!-- ── CHARACTER NAMING OVERLAY ── -->
     <div id="naming-overlay" class="ui-panel-overlay hidden">
         <div class="naming-box">
-            <h2 class="naming-title">🌾 Đặt Tên Nhân Vật</h2>
-            <p class="naming-desc">Chào mừng bạn đến với Tiny Farm Village! Hãy đặt tên cho nhân vật của bạn:</p>
-            <input type="text" id="input-player-name" class="naming-input" placeholder="Nhập tên nhân vật..." maxlength="14" autocomplete="off">
-            <button id="btn-naming-submit" class="start-game-btn">BẮT ĐẦU 🌾</button>
+            <div class="naming-left-pane">
+                <h2 class="naming-title">🌾 Đặt Tên Nhân Vật</h2>
+                <p class="naming-desc">Chào mừng bạn đến với Tiny Farm Village! Hãy đặt tên cho nhân vật của bạn:</p>
+                <input type="text" id="input-player-name" class="naming-input" placeholder="Nhập tên nhân vật..." maxlength="14" autocomplete="off">
+                <button id="btn-naming-submit" class="start-game-btn">BẮT ĐẦU 🌾</button>
+            </div>
+            
+            <!-- Virtual Keyboard for Mobile (shown only on touch devices) -->
+            <div id="naming-virtual-keyboard" class="naming-keyboard-container hidden">
+                <div class="keyboard-row">
+                    <button type="button" class="key-btn" data-key="Q">Q</button>
+                    <button type="button" class="key-btn" data-key="W">W</button>
+                    <button type="button" class="key-btn" data-key="E">E</button>
+                    <button type="button" class="key-btn" data-key="R">R</button>
+                    <button type="button" class="key-btn" data-key="T">T</button>
+                    <button type="button" class="key-btn" data-key="Y">Y</button>
+                    <button type="button" class="key-btn" data-key="U">U</button>
+                    <button type="button" class="key-btn" data-key="I">I</button>
+                    <button type="button" class="key-btn" data-key="O">O</button>
+                    <button type="button" class="key-btn" data-key="P">P</button>
+                </div>
+                <div class="keyboard-row">
+                    <button type="button" class="key-btn" data-key="A">A</button>
+                    <button type="button" class="key-btn" data-key="S">S</button>
+                    <button type="button" class="key-btn" data-key="D">D</button>
+                    <button type="button" class="key-btn" data-key="F">F</button>
+                    <button type="button" class="key-btn" data-key="G">G</button>
+                    <button type="button" class="key-btn" data-key="H">H</button>
+                    <button type="button" class="key-btn" data-key="J">J</button>
+                    <button type="button" class="key-btn" data-key="K">K</button>
+                    <button type="button" class="key-btn" data-key="L">L</button>
+                </div>
+                <div class="keyboard-row">
+                    <button type="button" class="key-btn control-key delete-key" data-key="Backspace">⌫ Xóa</button>
+                    <button type="button" class="key-btn" data-key="Z">Z</button>
+                    <button type="button" class="key-btn" data-key="X">X</button>
+                    <button type="button" class="key-btn" data-key="C">C</button>
+                    <button type="button" class="key-btn" data-key="V">V</button>
+                    <button type="button" class="key-btn" data-key="B">B</button>
+                    <button type="button" class="key-btn" data-key="N">N</button>
+                    <button type="button" class="key-btn" data-key="M">M</button>
+                    <button type="button" class="key-btn control-key space-key" data-key=" ">Khoảng trắng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── GAME GUIDE OVERLAY ── -->
+    <div id="guide-overlay" class="ui-panel-overlay hidden">
+        <div class="cozy-panel guide-box">
+            <button class="btn-close-panel" id="btn-close-guide">✕</button>
+            <div class="panel-header">
+                <h2>📖 HƯỚNG DẪN CHƠI GAME 🌾</h2>
+            </div>
+            <div class="guide-scrollable-content">
+                <div class="guide-section">
+                    <h3>🌱 1. Trồng Trọt & Thu Hoạch</h3>
+                    <p>Di chuyển đến các ô đất trống. Nhấp nút <strong>HÀNH ĐỘNG</strong> trên điện thoại (hoặc phím <strong>Space / E</strong> trên máy tính) để gieo hạt giống. Nếu đất bị khô, hãy chọn <strong>Bình tưới nước (Phím 4)</strong>, di chuyển ra khu vực <strong>Ao/Hồ (vùng nước bên trái bản đồ)</strong> để múc nước và tưới. <strong>Lưu ý:</strong> Cây cần được tưới nước trong vòng 1 phút sau khi gieo, nếu không cây sẽ chết khô 💀 và tự biến mất sau 10 giây!</p>
+                </div>
+                <div class="guide-section">
+                    <h3>🏪 2. Mua Hạt Giống</h3>
+                    <p>Đến gặp <strong>Người bán hạt giống</strong> ở quầy hạt giống (hoặc nhấp nút <strong>Cửa Hàng</strong> ở góc trên bên phải) để mua. Bạn có thể nhập số lượng cần mua và kiểm tra số hạt giống hiện có trong túi đồ.</p>
+                </div>
+                <div class="guide-section">
+                    <h3>⚖️ 3. Bán Nông Sản</h3>
+                    <p>Đến gặp <strong>Người mua nông sản</strong> ở quầy nông sản (hoặc nhấp nút <strong>Bán Nông Sản</strong> ở góc trên bên phải) để bán lấy tiền vàng. Bạn có thể chọn bán từng cái, bán sạch một loại, hoặc bán tất cả nông sản trong túi.</p>
+                </div>
+                <div class="guide-section">
+                    <h3>🎟️ 4. Xổ Số May Mắn</h3>
+                    <p>Nhấp vào biểu tượng <strong>Xổ Số</strong> (vé số 🎟️) trên màn hình để mua vé. Chọn con số may mắn của bạn (từ 00 đến 99) với giá 100 vàng. Kỳ quay thưởng diễn ra sau mỗi 3 phút. Tiền thưởng sẽ tự động được cộng vào túi của bạn khi trúng giải!</p>
+                </div>
+            </div>
+            <button id="btn-guide-start-playing" class="start-game-btn">TÔI ĐÃ HIỂU! BẮT ĐẦU CHƠI 🌾</button>
         </div>
     </div>
 
@@ -378,6 +472,7 @@
                     </div>
                     <button id="btn-lotto-random" class="cozy-btn btn-random">🎲 CHỌN NGẪU NHIÊN</button>
                     <div class="lotto-ticket-price">GIÁ VÉ: 🪙 100</div>
+                    <div class="lotto-balance-info">Vàng hiện có: 🪙 <span id="lotto-player-coins">0</span></div>
                     <button id="btn-lotto-buy" class="cozy-btn lotto-buy-btn">MUA VÉ 🎟️</button>
                 </div>
 
@@ -486,19 +581,19 @@
     </div>
 
 
+    <!-- ── MOBILE VIRTUAL CONTROLS ────────────────────────── -->
+    <div id="mobile-joystick-zone" class="mobile-only">
+        <div id="joystick-base">
+            <div id="joystick-handle"></div>
+        </div>
+    </div>
+    <div id="mobile-action-zone" class="mobile-only">
+        <button id="btn-mobile-action">HÀNH ĐỘNG</button>
+    </div>
+
 </div>
 
 <div id="youtube-bgm-container"></div>
-
-<!-- ── MOBILE VIRTUAL CONTROLS ────────────────────────── -->
-<div id="mobile-joystick-zone" class="mobile-only">
-    <div id="joystick-base">
-        <div id="joystick-handle"></div>
-    </div>
-</div>
-<div id="mobile-action-zone" class="mobile-only">
-    <button id="btn-mobile-action">HÀNH ĐỘNG</button>
-</div>
 
 <!-- ── MOBILE ROTATE DEVICE OVERLAY ──────────────────── -->
 <div id="rotate-device-overlay">

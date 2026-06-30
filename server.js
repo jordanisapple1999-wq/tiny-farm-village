@@ -73,6 +73,17 @@ const server = http.createServer((req, res) => {
     });
 });
 
+const os = require('os');
+
 server.listen(PORT, () => {
     console.log(`Server is running at http://localhost:${PORT}`);
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+            // Note: Node.js 18+ family property is a string 'IPv4', while older versions might be a number 4
+            if ((iface.family === 'IPv4' || iface.family === 4) && !iface.internal) {
+                console.log(`Access on your phone: http://${iface.address}:${PORT}`);
+            }
+        }
+    }
 });
