@@ -24,6 +24,13 @@ export class Inventory {
 
         // Active hotbar slot: 'carrot', 'tomato', 'pumpkin', 'water_can'
         this.activeHotbarSlot = 'carrot';
+
+        this.lastAllowanceTime = Date.now();
+
+        // Check active allowance every 10 seconds (ticks for minute boundary)
+        setInterval(() => {
+            this.checkActiveAllowance();
+        }, 10000);
     }
 
     getCoins() {
@@ -152,6 +159,94 @@ export class Inventory {
         }
     }
 
+    checkOfflineAllowance() {
+        if (!this.lastAllowanceTime) {
+            this.lastAllowanceTime = Date.now();
+            return;
+        }
+
+        const now = Date.now();
+        const diffMs = now - this.lastAllowanceTime;
+        const diffMinutes = Math.floor(diffMs / 60000);
+
+        if (diffMinutes >= 1) {
+            let currentCoins = this.coins;
+            let totalGranted = 0;
+
+            for (let i = 0; i < diffMinutes; i++) {
+                let grant = 0;
+                if (currentCoins < 1000) {
+                    grant = 50;
+                } else if (currentCoins < 10000) {
+                    grant = 100;
+                } else if (currentCoins < 20000) {
+                    grant = 200;
+                } else if (currentCoins < 50000) {
+                    grant = 300;
+                } else if (currentCoins < 100000) {
+                    grant = 500;
+                } else {
+                    grant = 500; // Cap at 500
+                }
+                currentCoins += grant;
+                totalGranted += grant;
+            }
+
+            this.coins = currentCoins;
+            this.lastAllowanceTime += diffMinutes * 60000;
+            this.triggerUpdate();
+
+            // Notify user of offline earnings after a short delay
+            setTimeout(() => {
+                if (window.SaveSystem) {
+                    window.SaveSystem.showToast(`Chào mừng trở lại! Bạn nhận được 🪙${totalGranted} vàng trợ cấp tích lũy trong ${diffMinutes} phút ngoại tuyến! 💤`, 5000);
+                }
+            }, 2000);
+        }
+    }
+
+    checkActiveAllowance() {
+        const now = Date.now();
+        const diffMs = now - this.lastAllowanceTime;
+        const diffMinutes = Math.floor(diffMs / 60000);
+
+        if (diffMinutes >= 1) {
+            let totalGranted = 0;
+            let currentCoins = this.coins;
+
+            for (let i = 0; i < diffMinutes; i++) {
+                let grant = 0;
+                if (currentCoins < 1000) {
+                    grant = 50;
+                } else if (currentCoins < 10000) {
+                    grant = 100;
+                } else if (currentCoins < 20000) {
+                    grant = 200;
+                } else if (currentCoins < 50000) {
+                    grant = 300;
+                } else if (currentCoins < 100000) {
+                    grant = 500;
+                } else {
+                    grant = 500;
+                }
+                currentCoins += grant;
+                totalGranted += grant;
+            }
+
+            this.coins = currentCoins;
+            this.lastAllowanceTime += diffMinutes * 60000;
+            this.triggerUpdate();
+
+            if (window.SaveSystem) {
+                window.SaveSystem.showToast(`Nhận trợ cấp định kỳ: +🪙${totalGranted} vàng! 🪙`);
+                // Auto save
+                if (window._phaserScene) {
+                    window.SaveSystem.saveGame(window._phaserScene.player, window._phaserScene.farm);
+                }
+            }
+        }
+    }
+
     // State Serialization
     toJSON() {
         return {
@@ -159,7 +254,8 @@ export class Inventory {
             items: this.items,
             selectedSeed: this.selectedSeed,
             waterAmount: this.waterAmount,
-            activeHotbarSlot: this.activeHotbarSlot
+            activeHotbarSlot: this.activeHotbarSlot,
+            lastAllowanceTime: this.lastAllowanceTime
         };
     }
 
@@ -170,6 +266,16 @@ export class Inventory {
         if (data.selectedSeed) this.selectedSeed = data.selectedSeed;
         if (data.waterAmount !== undefined) this.waterAmount = data.waterAmount;
         if (data.activeHotbarSlot !== undefined) this.activeHotbarSlot = data.activeHotbarSlot;
+        
+        if (data.lastAllowanceTime !== undefined) {
+            this.lastAllowanceTime = data.lastAllowanceTime;
+        } else {
+            this.lastAllowanceTime = Date.now();
+        }
+
+        // Run offline check immediately on load
+        this.checkOfflineAllowance();
+
         this.triggerUpdate();
     }
 }

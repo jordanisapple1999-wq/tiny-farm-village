@@ -33,6 +33,84 @@ export class ShopController {
         if (this.btnSellAll) {
             this.btnSellAll.addEventListener('click', () => this.sellAllCrops());
         }
+        this.initNumpad();
+    }
+
+    initNumpad() {
+        this.numpadOverlay = document.getElementById('numpad-overlay');
+        this.numpadDisplayVal = document.getElementById('numpad-display-val');
+        this.btnNumpadCancel = document.getElementById('btn-numpad-cancel');
+        this.btnNumpadOk = document.getElementById('btn-numpad-ok');
+        this.activeNumpadTarget = null;
+
+        if (!this.numpadOverlay) return;
+
+        // Bind keyboard button clicks
+        const keys = this.numpadOverlay.querySelectorAll('.numpad-key');
+        keys.forEach(key => {
+            key.addEventListener('click', () => {
+                soundManager.playSFX('click');
+                const val = key.getAttribute('data-val');
+                const action = key.getAttribute('data-action');
+
+                let current = this.numpadDisplayVal.innerText;
+
+                if (val !== null) {
+                    if (current === '0' || current === '') {
+                        current = val;
+                    } else if (current.length < 2) {
+                        current += val;
+                    }
+                } else if (action === 'clear') {
+                    current = '0';
+                } else if (action === 'backspace') {
+                    if (current.length > 1) {
+                        current = current.slice(0, -1);
+                    } else {
+                        current = '0';
+                    }
+                }
+
+                // Keep it between 0 and 99 visually
+                let num = parseInt(current, 10) || 0;
+                if (num > 99) num = 99;
+                
+                this.numpadDisplayVal.innerText = num.toString();
+            });
+        });
+
+        // Cancel button
+        if (this.btnNumpadCancel) {
+            this.btnNumpadCancel.addEventListener('click', () => {
+                soundManager.playSFX('click');
+                this.numpadOverlay.classList.add('hidden');
+            });
+        }
+
+        // Confirm button
+        if (this.btnNumpadOk) {
+            this.btnNumpadOk.addEventListener('click', () => {
+                soundManager.playSFX('click');
+                let finalVal = parseInt(this.numpadDisplayVal.innerText, 10) || 1;
+                if (finalVal < 1) finalVal = 1;
+                if (finalVal > 99) finalVal = 99;
+
+                if (this.activeNumpadTarget) {
+                    this.activeNumpadTarget.innerText = finalVal.toString();
+                }
+                this.numpadOverlay.classList.add('hidden');
+            });
+        }
+    }
+
+    openNumpad(targetSpan) {
+        this.activeNumpadTarget = targetSpan;
+        if (this.numpadDisplayVal) {
+            this.numpadDisplayVal.innerText = targetSpan.innerText;
+        }
+        if (this.numpadOverlay) {
+            this.numpadOverlay.classList.remove('hidden');
+        }
     }
 
     // --- SEED SHOP ---
@@ -87,6 +165,12 @@ export class ShopController {
             const decBtn = row.querySelector('.dec-btn');
             const incBtn = row.querySelector('.inc-btn');
             const qtyVal = row.querySelector('.shop-qty-value');
+
+            // Make the number clickable to open virtual numpad
+            qtyVal.style.cursor = 'pointer';
+            qtyVal.addEventListener('click', () => {
+                this.openNumpad(qtyVal);
+            });
 
             decBtn.addEventListener('click', () => {
                 let current = parseInt(qtyVal.innerText, 10) || 1;

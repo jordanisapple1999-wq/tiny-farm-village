@@ -2806,3 +2806,150 @@ body.mobile-device .hotbar-key {
     display: none;
 }
 
+/* ── Cozy Numpad Overlay styling ── */
+.numpad-box {
+    width: 280px;
+    padding: 16px;
+    background: var(--wood-bg);
+    border: 4px solid var(--wood-dark);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.6), inset 0 0 12px rgba(255,255,255,0.15);
+}
+
+.numpad-header {
+    font-family: var(--font-heading);
+    font-size: 1.15rem;
+    color: #ffd875;
+    text-shadow: 1.5px 1.5px 0 var(--wood-dark);
+    margin-bottom: 2px;
+}
+
+.numpad-display-container {
+    width: 100%;
+    height: 42px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 2px solid var(--wood-dark);
+    border-radius: 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+#numpad-display-val {
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #fff6eb;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    letter-spacing: 2px;
+}
+
+.numpad-keys {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    width: 100%;
+}
+
+.numpad-key {
+    height: 38px;
+    border-radius: 6px;
+    border: 2.5px solid var(--wood-dark);
+    background: linear-gradient(to bottom, #ebd1a9, #c7a475);
+    color: #3b2314;
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+    -webkit-user-select: none;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
+    outline: none;
+    padding: 0;
+}
+
+.numpad-key:active {
+    transform: translateY(1px);
+    background: #b59265;
+}
+
+.numpad-key.numpad-action {
+    background: linear-gradient(to bottom, #d97706, #b45309);
+    color: #fff6eb;
+}
+
+.numpad-key.numpad-action.clear {
+    background: linear-gradient(to bottom, #ef4444, #dc2626);
+    color: #fff;
+}
+
+.numpad-key.numpad-action:active {
+    background: #9a3412;
+}
+
+.numpad-actions-row {
+    display: flex;
+    width: 100%;
+    gap: 12px;
+    margin-top: 4px;
+}
+
+.numpad-actions-row .cozy-btn {
+    flex: 1;
+    height: 36px;
+    font-size: 0.9rem;
+    font-family: var(--font-heading);
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.numpad-actions-row .cozy-btn.cancel {
+    background: linear-gradient(to bottom, #9ca3af, #6b7280) !important;
+}
+
+/* Mobile responsive scaling for numpad */
+body.mobile-device .numpad-box {
+    width: 220px !important;
+    padding: 8px !important;
+    gap: 6px !important;
+    border-width: 3px !important;
+}
+
+body.mobile-device .numpad-header {
+    font-size: 0.9rem !important;
+}
+
+body.mobile-device .numpad-display-container {
+    height: 32px !important;
+}
+
+body.mobile-device #numpad-display-val {
+    font-size: 1.15rem !important;
+}
+
+body.mobile-device .numpad-key {
+    height: 30px !important;
+    font-size: 0.95rem !important;
+    border-width: 1.5px !important;
+}
+
+body.mobile-device .numpad-actions-row {
+    margin-top: 2px !important;
+    gap: 6px !important;
+}
+
+body.mobile-device .numpad-actions-row .cozy-btn {
+    height: 28px !important;
+    font-size: 0.8rem !important;
+}
+

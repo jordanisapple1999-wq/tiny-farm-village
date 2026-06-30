@@ -228,3 +228,4 @@ export class SaveSystem {
         }, duration);
     }
 }
+window.SaveSystem = SaveSystem;

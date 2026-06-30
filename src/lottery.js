@@ -7,14 +7,37 @@ import { soundManager } from './audio.js';
 const LOTTERY_SAVE_KEY = 'tiny_farm_lottery';
 const CYCLE_DURATION = 180; // 3 minutes cycle
 
+// Seeded PRNG based on round ID to make draws identical for all players in that round
+function getWinningNumbersForRound(roundId) {
+    let seed = roundId * 1234567;
+    const nextRandom = () => {
+        seed = (seed * 9301 + 49297) % 233280;
+        return seed / 233280;
+    };
+    const generateWinningNumber = () => {
+        const val = Math.floor(nextRandom() * 100);
+        return val.toString().padStart(2, '0');
+    };
+    return {
+        bet: generateWinningNumber(),
+        ba: generateWinningNumber(),
+        nhi: generateWinningNumber(),
+        nhat: generateWinningNumber(),
+        dacbiet: generateWinningNumber()
+    };
+}
+
 export class LotterySystem {
     constructor() {
         this.timeLeft = CYCLE_DURATION; // Count down in seconds
         this.tickets = []; // Current round tickets (array of strings, e.g. ["07", "12"])
         this.history = []; // History of previous draws (max 5)
-        this.lastDraw = null; // Last draw details: { winningNumbers: { bet, ba, nhi, nhat, dacbiet }, tickets: [], matches: [], rewards: 0 }
+        this.lastDraw = null; // Last draw details
         this.isDrawing = false;
         
+        this.roundId = 0; // Current global round ID based on time
+        this.ticketRoundId = null; // Round ID for which current tickets were bought
+
         // Web Audio Context (created on first sound)
         this.audioCtx = null;
 
@@ -179,24 +202,39 @@ export class LotterySystem {
     }
 
     // --- Core Timer ---
+    syncTimer() {
+        const nowMs = Date.now();
+        const cycleMs = CYCLE_DURATION * 1000;
+        this.roundId = Math.floor(nowMs / cycleMs);
+        const elapsedMs = nowMs % cycleMs;
+        this.timeLeft = Math.ceil((cycleMs - elapsedMs) / 1000);
+    }
+
     startTimer() {
         if (this.timerInterval) clearInterval(this.timerInterval);
         
+        this.syncTimer();
+        this.triggerUIUpdate();
+
         this.timerInterval = setInterval(() => {
-            if (this.isDrawing) return;
+            const nowMs = Date.now();
+            const cycleMs = CYCLE_DURATION * 1000;
+            const currentRoundId = Math.floor(nowMs / cycleMs);
+            const elapsedMs = nowMs % cycleMs;
+            this.timeLeft = Math.ceil((cycleMs - elapsedMs) / 1000);
 
-            if (this.timeLeft > 0) {
-                this.timeLeft--;
+            // Play tick sound in the final 5 seconds
+            if (this.timeLeft > 0 && this.timeLeft <= 5 && !this.isDrawing) {
+                this.playSound('tick');
+            }
 
-                // Play tick sound in the final 5 seconds
-                if (this.timeLeft > 0 && this.timeLeft <= 5) {
-                    this.playSound('tick');
-                }
-
-                this.triggerUIUpdate();
+            if (currentRoundId > this.roundId) {
+                // Round changed! Trigger draw for the round that just ended
+                const drawRoundId = this.roundId;
+                this.roundId = currentRoundId;
+                this.startDraw(drawRoundId);
             } else {
-                // Time's up! Trigger draw
-                this.startDraw();
+                this.triggerUIUpdate();
             }
         }, 1000);
     }
@@ -205,6 +243,12 @@ export class LotterySystem {
     buyTicket(numStr) {
         if (this.isDrawing) {
             SaveSystem.showToast('Đang mở thưởng, không thể mua vé! 🎰');
+            return false;
+        }
+
+        if (this.timeLeft <= 5) {
+            SaveSystem.showToast('Kỳ quay số sắp bắt đầu, không thể mua vé! 🎰');
+            this.playSound('error');
             return false;
         }
 
@@ -229,6 +273,12 @@ export class LotterySystem {
         // Check if player has enough money (100 coins)
         if (inventoryInstance.getCoins() >= 100) {
             inventoryInstance.spendCoins(100);
+            
+            // Set ticket validation round ID if this is the first ticket bought
+            if (this.tickets.length === 0) {
+                this.ticketRoundId = this.roundId;
+            }
+
             this.tickets.push(paddedNum);
             this.playSound('buy');
             SaveSystem.showToast(`Mua thành công vé số ${paddedNum} 🎟️`);
@@ -258,6 +308,11 @@ export class LotterySystem {
         inventoryInstance.addCoins(100);
         this.playSound('buy');
         SaveSystem.showToast(`Đã hủy vé số ${num} (Hoàn lại 🪙100)`);
+        
+        if (this.tickets.length === 0) {
+            this.ticketRoundId = null;
+        }
+
         this.saveState();
         this.triggerUIUpdate();
         
@@ -268,58 +323,55 @@ export class LotterySystem {
     }
 
     // --- Drawing numbers ---
-    startDraw() {
+    startDraw(drawRoundId) {
         this.isDrawing = true;
         this.triggerUIUpdate();
 
-        // 1. Generate winning numbers (completely random 00-99, independent)
-        const generateWinningNumber = () => {
-            const num = Math.floor(Math.random() * 100);
-            return num.toString().padStart(2, '0');
-        };
+        // 1. Generate winning numbers deterministically for this specific round ID
+        const winningNumbers = getWinningNumbersForRound(drawRoundId);
 
-        const winningNumbers = {
-            bet: generateWinningNumber(),
-            ba: generateWinningNumber(),
-            nhi: generateWinningNumber(),
-            nhat: generateWinningNumber(),
-            dacbiet: generateWinningNumber()
-        };
+        // Check if player had tickets in this drawn round
+        const hadTickets = this.ticketRoundId === drawRoundId && this.tickets.length > 0;
 
         // 2. Delegate animation trigger to UI if the panel is open
         if (window._lotteryUI && window._lotteryUI.isOpen()) {
             window._lotteryUI.animateDraw(winningNumbers, (matches, rewards) => {
-                this.completeDraw(winningNumbers, matches, rewards);
+                this.completeDraw(drawRoundId, winningNumbers, matches, rewards);
             });
         } else {
             // Fallback: draw instantly if panel is closed or UI is not bound
-            const check = this.checkTickets(winningNumbers);
-            this.completeDraw(winningNumbers, check.matches, check.rewards);
+            const check = hadTickets ? this.checkTickets(winningNumbers) : { matches: [], rewards: 0 };
+            this.completeDraw(drawRoundId, winningNumbers, check.matches, check.rewards);
 
             // Display background completion toast notification immediately
-            if (check.rewards > 0) {
-                SaveSystem.showToast(`Xổ số kết thúc! Bạn đã trúng thưởng 🪙${check.rewards} vàng! 🎉`, 5000);
-            } else if (check.matches.length > 0) {
-                SaveSystem.showToast(`Xổ số kết thúc! Vé của bạn không trúng giải kỳ này. 🎟️💨`, 4000);
+            if (hadTickets) {
+                if (check.rewards > 0) {
+                    SaveSystem.showToast(`Xổ số kết thúc! Bạn đã trúng thưởng 🪙${check.rewards} vàng! 🎉`, 5000);
+                } else {
+                    SaveSystem.showToast(`Xổ số kết thúc! Vé của bạn không trúng giải kỳ này. 🎟️💨`, 4000);
+                }
             } else {
                 SaveSystem.showToast(`Xổ số kết thúc! Giải Đặc Biệt kỳ này là số ${winningNumbers.dacbiet} 👑`, 4000);
             }
         }
     }
 
-    completeDraw(winningNumbers, matches, rewards) {
+    completeDraw(drawRoundId, winningNumbers, matches, rewards) {
+        const hadTickets = this.ticketRoundId === drawRoundId && this.tickets.length > 0;
+
         // Build last draw object
         this.lastDraw = {
             winningNumbers,
-            tickets: [...this.tickets],
-            matches,
-            rewards,
+            tickets: hadTickets ? [...this.tickets] : [],
+            matches: matches || [],
+            rewards: rewards || 0,
             claimed: false
         };
 
         // Append to history
-        const timestamp = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-        const dateStr = new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+        const drawTimeMs = (drawRoundId + 1) * CYCLE_DURATION * 1000;
+        const timestamp = new Date(drawTimeMs).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        const dateStr = new Date(drawTimeMs).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
         
         this.history.unshift({
             time: timestamp,
@@ -332,18 +384,17 @@ export class LotterySystem {
             this.history.pop();
         }
 
-        // Auto-claim rewards or keep them pending?
-        // To make it fully automated but matching the mockup:
-        // Let's add money automatically to comply with: "Tiền thưởng cộng tự động"
-        // But also let the "Nhận thưởng" button exist to clear the modal screen.
-        // Wait, if it auto-credits:
-        if (rewards > 0) {
+        // Auto-claim rewards
+        if (hadTickets && rewards > 0) {
             inventoryInstance.addCoins(rewards);
         }
 
-        // Reset tickets for next round
-        this.tickets = [];
-        this.timeLeft = CYCLE_DURATION;
+        // Reset tickets if they were drawn
+        if (this.ticketRoundId === drawRoundId) {
+            this.tickets = [];
+            this.ticketRoundId = null;
+        }
+
         this.isDrawing = false;
 
         this.saveState();
@@ -396,11 +447,11 @@ export class LotterySystem {
     saveState() {
         try {
             const data = {
-                timeLeft: this.timeLeft,
+                roundId: this.roundId,
+                ticketRoundId: this.ticketRoundId,
                 tickets: this.tickets,
                 history: this.history,
-                lastDraw: this.lastDraw,
-                saveTimestamp: Date.now()
+                lastDraw: this.lastDraw
             };
             localStorage.setItem(LOTTERY_SAVE_KEY, JSON.stringify(data));
         } catch (e) {
@@ -411,83 +462,85 @@ export class LotterySystem {
     loadState() {
         try {
             const raw = localStorage.getItem(LOTTERY_SAVE_KEY);
-            if (!raw) return;
+            const currentRoundId = Math.floor(Date.now() / (CYCLE_DURATION * 1000));
+            this.roundId = currentRoundId;
+
+            if (!raw) {
+                this.tickets = [];
+                this.ticketRoundId = null;
+                this.history = [];
+                this.lastDraw = null;
+                return;
+            }
 
             const data = JSON.parse(raw);
             if (!data) return;
 
             this.tickets = data.tickets || [];
+            this.ticketRoundId = data.ticketRoundId !== undefined ? data.ticketRoundId : null;
             this.history = data.history || [];
             this.lastDraw = data.lastDraw || null;
+            const savedRoundId = data.roundId || currentRoundId;
 
-            // Offline time calculation
-            const savedTime = data.saveTimestamp || Date.now();
-            const elapsedSeconds = Math.floor((Date.now() - savedTime) / 1000);
+            // Offline missed draws checking
+            if (this.ticketRoundId !== null && this.ticketRoundId < currentRoundId) {
+                const drawRoundId = this.ticketRoundId;
+                const winningNumbers = getWinningNumbersForRound(drawRoundId);
+                const check = this.checkTickets(winningNumbers);
 
-            if (elapsedSeconds > 0) {
-                const storedTimeLeft = data.timeLeft !== undefined ? data.timeLeft : CYCLE_DURATION;
-                
-                if (elapsedSeconds >= storedTimeLeft) {
-                    // At least one draw cycle was missed!
-                    // Let's check if they had tickets in the missed draw
-                    if (this.tickets.length > 0) {
-                        // Simulate one draw for their tickets
-                        const generateWinningNumber = () => Math.floor(Math.random() * 100).toString().padStart(2, '0');
-                        const winningNumbers = {
-                            bet: generateWinningNumber(),
-                            ba: generateWinningNumber(),
-                            nhi: generateWinningNumber(),
-                            nhat: generateWinningNumber(),
-                            dacbiet: generateWinningNumber()
-                        };
-
-                        const check = this.checkTickets(winningNumbers);
-                        
-                        // Add rewards automatically
-                        if (check.rewards > 0) {
-                            inventoryInstance.addCoins(check.rewards);
-                            
-                            // Delay toast slightly so scene is initialized
-                            setTimeout(() => {
-                                SaveSystem.showToast(`Kỳ quay số vắng mặt đã diễn ra! Bạn trúng thưởng 🪙${check.rewards} vàng! 🎉`, 5000);
-                            }, 1500);
-                        } else {
-                            setTimeout(() => {
-                                SaveSystem.showToast('Kỳ quay số vắng mặt đã diễn ra nhưng vé của bạn không trúng giải. 🎟️', 4000);
-                            }, 1500);
+                if (check.rewards > 0) {
+                    inventoryInstance.addCoins(check.rewards);
+                    
+                    setTimeout(() => {
+                        if (window.SaveSystem) {
+                            window.SaveSystem.showToast(`Kỳ quay số vắng mặt (Kỳ #${drawRoundId}) đã diễn ra! Bạn trúng thưởng 🪙${check.rewards} vàng! 🎉`, 5000);
                         }
-
-                        // Store this simulated draw as the last draw
-                        this.lastDraw = {
-                            winningNumbers,
-                            tickets: [...this.tickets],
-                            matches: check.matches,
-                            rewards: check.rewards,
-                            claimed: true
-                        };
-
-                        // Add to history
-                        const missedTimeStr = new Date(savedTime + storedTimeLeft * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-                        const missedDateStr = new Date(savedTime + storedTimeLeft * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
-                        this.history.unshift({
-                            time: missedTimeStr,
-                            date: missedDateStr,
-                            numbers: winningNumbers
-                        });
-                        if (this.history.length > 5) this.history.pop();
-                    }
-
-                    // Remaining time in the current cycle
-                    const remainingElapsed = elapsedSeconds - storedTimeLeft;
-                    this.timeLeft = CYCLE_DURATION - (remainingElapsed % CYCLE_DURATION);
-                    this.tickets = []; // Clear tickets since they are spent
+                    }, 1500);
                 } else {
-                    // No draw was missed, just reduce timer
-                    this.timeLeft = storedTimeLeft - elapsedSeconds;
+                    setTimeout(() => {
+                        if (window.SaveSystem) {
+                            window.SaveSystem.showToast(`Kỳ quay số vắng mặt (Kỳ #${drawRoundId}) đã diễn ra nhưng vé của bạn không trúng giải. 🎟️`, 4000);
+                        }
+                    }, 1500);
                 }
-            } else {
-                this.timeLeft = data.timeLeft !== undefined ? data.timeLeft : CYCLE_DURATION;
+
+                this.lastDraw = {
+                    winningNumbers,
+                    tickets: [...this.tickets],
+                    matches: check.matches,
+                    rewards: check.rewards,
+                    claimed: true
+                };
+
+                const drawTimeMs = (drawRoundId + 1) * CYCLE_DURATION * 1000;
+                const missedTimeStr = new Date(drawTimeMs).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                const missedDateStr = new Date(drawTimeMs).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+                this.history.unshift({
+                     time: missedTimeStr,
+                     date: missedDateStr,
+                     numbers: winningNumbers
+                });
+                if (this.history.length > 5) this.history.pop();
+
+                this.tickets = [];
+                this.ticketRoundId = null;
             }
+
+            // Populate some default history if blank to look cozy
+            if (this.history.length === 0) {
+                for (let i = 1; i <= 3; i++) {
+                    const rId = currentRoundId - i;
+                    const winNums = getWinningNumbersForRound(rId);
+                    const drawTimeMs = (rId + 1) * CYCLE_DURATION * 1000;
+                    this.history.push({
+                        time: new Date(drawTimeMs).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+                        date: new Date(drawTimeMs).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }),
+                        numbers: winNums
+                    });
+                }
+            }
+
+            this.syncTimer();
         } catch (e) {
             console.error('Error loading lottery state:', e);
         }
@@ -501,6 +554,8 @@ export class LotterySystem {
             this.history = [];
             this.lastDraw = null;
             this.isDrawing = false;
+            this.ticketRoundId = null;
+            this.roundId = Math.floor(Date.now() / (CYCLE_DURATION * 1000));
         } catch (e) {
             console.error('Error resetting lottery state:', e);
         }
