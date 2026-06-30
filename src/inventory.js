@@ -201,6 +201,9 @@ export class Inventory {
                 if (window.SaveSystem) {
                     window.SaveSystem.showToast(`Chào mừng trở lại! Bạn nhận được 🪙${totalGranted} vàng trợ cấp tích lũy trong ${diffMinutes} phút ngoại tuyến! 💤`, 5000);
                 }
+                if (typeof window.showCoinsAllowanceFloat === 'function') {
+                    window.showCoinsAllowanceFloat(totalGranted);
+                }
             }, 2000);
         }
     }
@@ -243,6 +246,10 @@ export class Inventory {
                 if (window._phaserScene) {
                     window.SaveSystem.saveGame(window._phaserScene.player, window._phaserScene.farm);
                 }
+            }
+
+            if (typeof window.showCoinsAllowanceFloat === 'function') {
+                window.showCoinsAllowanceFloat(totalGranted);
             }
         }
     }

@@ -194,6 +194,7 @@ html, body {
     flex-wrap: wrap;
 }
 .hud-coin-panel {
+    position: relative;
     background: var(--wood-dark);
     border: 3px solid var(--wood-accent);
     border-radius: 20px;
@@ -2444,11 +2445,11 @@ body.mobile-device .lottery-box.tab-history-active .my-tickets-check-panel {
 body.mobile-device .tickets-list-scroll,
 body.mobile-device .check-list-scroll,
 body.mobile-device .results-list-scroll {
-    max-height: 64px !important;
+    max-height: 120px !important;
 }
 
 body.mobile-device .prize-list {
-    max-height: 64px !important;
+    max-height: 120px !important;
     overflow-y: auto;
     padding-right: 4px;
 }
@@ -2469,7 +2470,9 @@ body.mobile-device .slot-ball {
     font-size: 0.9rem !important;
 }
 body.mobile-device .slot-label {
-    font-size: 0.6rem !important;
+    font-size: 0.52rem !important;
+    white-space: nowrap !important;
+    letter-spacing: 0px !important;
 }
 body.mobile-device .draw-slot {
     padding: 2px !important;
@@ -2965,4 +2968,42 @@ body.mobile-device .numpad-actions-row .cozy-btn {
     height: 28px !important;
     font-size: 0.8rem !important;
 }
+
+/* ── HUD ALLOWANCE FLOATING TEXT ── */
+.allowance-float-text {
+    position: absolute;
+    top: -28px;
+    left: 20%;
+    color: #4ade80; /* vibrant green */
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 0.85rem;
+    text-shadow: 2px 2px 0px #000, -1px -1px 0px #000, 1px -1px 0px #000, -1px 1px 0px #000;
+    pointer-events: none;
+    white-space: nowrap;
+    animation: allowanceFloatAnim 3s forwards cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    z-index: 1000;
+}
+@keyframes allowanceFloatAnim {
+    0% {
+        opacity: 0;
+        transform: translateY(12px) scale(0.8);
+    }
+    12% {
+        opacity: 1;
+        transform: translateY(0) scale(1.1);
+    }
+    18% {
+        transform: translateY(-2px) scale(1);
+    }
+    85% {
+        opacity: 1;
+        transform: translateY(-12px) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-26px) scale(0.9);
+    }
+}
+
 

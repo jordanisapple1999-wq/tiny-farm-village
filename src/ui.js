@@ -66,6 +66,26 @@ export class UIController {
             this.renderInventory();
         });
 
+        // Global float notification for periodic coin allowances
+        window.showCoinsAllowanceFloat = (amount) => {
+            const coinPanel = document.querySelector('.hud-coin-panel');
+            if (!coinPanel) return;
+
+            // Clear any stale float elements
+            const existing = coinPanel.querySelectorAll('.allowance-float-text');
+            existing.forEach(el => el.remove());
+
+            const floatSpan = document.createElement('span');
+            floatSpan.className = 'allowance-float-text';
+            floatSpan.innerText = `+🪙${amount} Trợ cấp`;
+
+            coinPanel.appendChild(floatSpan);
+
+            setTimeout(() => {
+                floatSpan.remove();
+            }, 3000);
+        };
+
         // Detect touch capability and toggle mobile controls
         const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
         if (isTouch) {

@@ -97,6 +97,17 @@ export class ShopController {
 
                 if (this.activeNumpadTarget) {
                     this.activeNumpadTarget.innerText = finalVal.toString();
+                    
+                    // Update total price display on confirm
+                    const idParts = this.activeNumpadTarget.id.split('-');
+                    const cropId = idParts[idParts.length - 1];
+                    const crop = CROPS[cropId];
+                    if (crop) {
+                        const priceSpan = document.getElementById(`price-val-${cropId}`);
+                        if (priceSpan) {
+                            priceSpan.innerText = `🪙${finalVal * crop.seedCost}`;
+                        }
+                    }
                 }
                 this.numpadOverlay.classList.add('hidden');
             });
@@ -155,7 +166,7 @@ export class ShopController {
                         <span class="shop-qty-value" id="qty-val-${crop.id}">1</span>
                         <button class="qty-btn inc-btn" data-crop-id="${crop.id}">+</button>
                     </div>
-                    <span class="shop-item-price">🪙${crop.seedCost}</span>
+                    <span class="shop-item-price" id="price-val-${crop.id}">🪙${crop.seedCost}</span>
                     <button class="cozy-btn buy-btn" data-crop-id="${crop.id}">Mua</button>
                 </div>
             `;
@@ -165,6 +176,15 @@ export class ShopController {
             const decBtn = row.querySelector('.dec-btn');
             const incBtn = row.querySelector('.inc-btn');
             const qtyVal = row.querySelector('.shop-qty-value');
+
+            // Total price helper
+            const updateTotalPrice = (qty) => {
+                const total = qty * crop.seedCost;
+                const priceSpan = row.querySelector(`#price-val-${crop.id}`);
+                if (priceSpan) {
+                    priceSpan.innerText = `🪙${total}`;
+                }
+            };
 
             // Make the number clickable to open virtual numpad
             qtyVal.style.cursor = 'pointer';
@@ -176,6 +196,7 @@ export class ShopController {
                 let current = parseInt(qtyVal.innerText, 10) || 1;
                 if (current > 1) {
                     qtyVal.innerText = current - 1;
+                    updateTotalPrice(current - 1);
                     soundManager.playSFX('click');
                 }
             });
@@ -184,6 +205,7 @@ export class ShopController {
                 let current = parseInt(qtyVal.innerText, 10) || 1;
                 if (current < 99) {
                     qtyVal.innerText = current + 1;
+                    updateTotalPrice(current + 1);
                     soundManager.playSFX('click');
                 }
             });
@@ -192,6 +214,7 @@ export class ShopController {
                 const qty = parseInt(qtyVal.innerText, 10) || 1;
                 this.buySeed(crop.id, qty);
                 qtyVal.innerText = 1;
+                updateTotalPrice(1);
             });
 
             this.shopItemsContainer.appendChild(row);
