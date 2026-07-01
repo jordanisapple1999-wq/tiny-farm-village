@@ -10,6 +10,7 @@ export class DialogueSystem {
         this.textContainer = document.getElementById('dialogue-text');
         this.btnNext = document.getElementById('btn-dialogue-next');
         this.btnClose = document.getElementById('btn-dialogue-close');
+        this.btnSkip = document.getElementById('btn-dialogue-skip');
 
         this.dialogues = [];
         this.currentIndex = 0;
@@ -32,6 +33,13 @@ export class DialogueSystem {
         this.btnClose.addEventListener('click', () => {
             this.close();
         });
+
+        if (this.btnSkip) {
+            this.btnSkip.addEventListener('click', () => {
+                soundManager.playSFX('click');
+                this.complete();
+            });
+        }
 
         // Keyboard listener to advance dialogue (Space, Enter, E) or close (Escape)
         window.addEventListener('keydown', (e) => {
@@ -136,6 +144,7 @@ export class DialogueSystem {
         this.isTyping = false;
         this.btnClose.blur();
         this.btnNext.blur();
+        if (this.btnSkip) this.btnSkip.blur();
         // Re-enable Phaser keyboard
         if (window._phaserScene && window._phaserScene.input) {
             window._phaserScene.input.keyboard.enabled = true;

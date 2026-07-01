@@ -92,6 +92,103 @@ export class UIController {
             document.body.classList.add('mobile-device');
             this.initMobileControls();
         }
+
+        window._uiController = this;
+
+        // Tick helper HUD timer every second
+        setInterval(() => {
+            const helperPanel = document.getElementById('hud-helper-panel');
+            const helperTimer = document.getElementById('hud-helper-timer');
+            if (helperPanel && helperTimer) {
+                const helper = inventoryInstance.helper;
+                if (helper && helper.hiredUntil && Date.now() < helper.hiredUntil) {
+                    helperPanel.classList.remove('hidden');
+                    const diffMs = helper.hiredUntil - Date.now();
+                    const hours = Math.floor(diffMs / 3600000).toString().padStart(2, '0');
+                    const minutes = Math.floor((diffMs % 3600000) / 60000).toString().padStart(2, '0');
+                    const seconds = Math.floor((diffMs % 60000) / 1000).toString().padStart(2, '0');
+                    helperTimer.innerText = `${hours}:${minutes}:${seconds}`;
+                } else {
+                    helperPanel.classList.add('hidden');
+                }
+            }
+        }, 1000);
+    }
+
+    showOfflineSubsidyModal(totalGranted, diffMinutes) {
+        const subsidyOverlay = document.getElementById('subsidy-overlay');
+        const subsidyAmount = document.getElementById('subsidy-amount');
+        const subsidyTime = document.getElementById('subsidy-time');
+        const btnClose = document.getElementById('btn-close-subsidy');
+        const btnConfirm = document.getElementById('btn-subsidy-confirm');
+
+        if (!subsidyOverlay || !subsidyAmount || !subsidyTime || !btnConfirm) return;
+
+        subsidyAmount.innerText = `🪙${totalGranted}`;
+        subsidyTime.innerText = diffMinutes;
+
+        // Close other overlays to avoid overlapping screens
+        const overlayIds = ['inventory-overlay', 'shop-overlay', 'sell-overlay', 'auth-overlay', 'lottery-overlay', 'guide-overlay'];
+        overlayIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        });
+        this.closeInventory();
+
+        subsidyOverlay.classList.remove('hidden');
+        if (this.scene && this.scene.input && this.scene.input.keyboard) {
+            this.scene.input.keyboard.enabled = false;
+        }
+
+        if (this.subsidyInterval) {
+            clearInterval(this.subsidyInterval);
+        }
+
+        const closeSubsidy = () => {
+            clearInterval(this.subsidyInterval);
+            subsidyOverlay.classList.add('hidden');
+            
+            // Re-enable keyboard only if naming overlay is also closed
+            const namingOverlay = document.getElementById('naming-overlay');
+            const namingActive = namingOverlay && !namingOverlay.classList.contains('hidden');
+            if (!namingActive && this.scene && this.scene.input && this.scene.input.keyboard) {
+                this.scene.input.keyboard.enabled = true;
+            }
+            if (this.scene && this.scene.scale) {
+                this.scene.scale.refresh();
+            }
+        };
+
+        // Remove old event listeners if any, by cloning buttons
+        const newBtnClose = btnClose.cloneNode(true);
+        if (btnClose.parentNode) {
+            btnClose.parentNode.replaceChild(newBtnClose, btnClose);
+        }
+        newBtnClose.addEventListener('click', () => {
+            soundManager.playSFX('click');
+            closeSubsidy();
+        });
+
+        const newBtnConfirm = btnConfirm.cloneNode(true);
+        if (btnConfirm.parentNode) {
+            btnConfirm.parentNode.replaceChild(newBtnConfirm, btnConfirm);
+        }
+        newBtnConfirm.addEventListener('click', () => {
+            soundManager.playSFX('click');
+            closeSubsidy();
+        });
+
+        let countdown = 10;
+        newBtnConfirm.innerText = `NHẬN VÀ BẮT ĐẦU 🌾 (${countdown}s)`;
+
+        this.subsidyInterval = setInterval(() => {
+            countdown--;
+            if (countdown <= 0) {
+                closeSubsidy();
+            } else {
+                newBtnConfirm.innerText = `NHẬN VÀ BẮT ĐẦU 🌾 (${countdown}s)`;
+            }
+        }, 1000);
     }
 
     initEvents() {
@@ -200,6 +297,11 @@ export class UIController {
                 if (!this.authOverlay.classList.contains('hidden')) {
                     this.closeAuth();
                 }
+                // Close helper overlay if open
+                const helperOverlay = document.getElementById('helper-overlay');
+                if (helperOverlay && !helperOverlay.classList.contains('hidden')) {
+                    this.closeHelperModal();
+                }
                 // Close shop or sell overlay if open
                 if (shopInstance.isOpen()) {
                     if (!shopInstance.shopOverlay.classList.contains('hidden')) {
@@ -241,6 +343,147 @@ export class UIController {
                 soundManager.playSFX('click');
             });
         });
+
+        // Helper Modal Bindings
+        const btnHelperHire = document.getElementById('btn-helper-hire');
+        const btnCloseHelper = document.getElementById('btn-close-helper');
+        const btnHelperSaveSettings = document.getElementById('btn-helper-save-settings');
+
+        if (btnCloseHelper) {
+            btnCloseHelper.addEventListener('click', () => this.closeHelperModal());
+        }
+
+        if (btnHelperSaveSettings) {
+            btnHelperSaveSettings.addEventListener('click', () => {
+                const helper = inventoryInstance.helper;
+                helper.autoCarrot = document.getElementById('helper-auto-carrot').checked;
+                helper.autoTomato = document.getElementById('helper-auto-tomato').checked;
+                helper.autoPumpkin = document.getElementById('helper-auto-pumpkin').checked;
+
+                soundManager.playSFX('click');
+                SaveSystem.showToast("Đã cập nhật cấu hình tự trồng của Nê lộ! ⚙️");
+                
+                if (this.scene) {
+                    SaveSystem.saveGame(this.scene.player, this.scene.farm);
+                }
+                this.closeHelperModal();
+            });
+        }
+
+        if (btnHelperHire) {
+            btnHelperHire.addEventListener('click', () => {
+                const durationRadio = document.querySelector('input[name="helper-duration"]:checked');
+                const durationHours = parseInt(durationRadio ? durationRadio.value : '1', 10);
+                
+                const costMap = { 1: 500, 3: 1250, 10: 4000 };
+                const cost = costMap[durationHours] || 500;
+
+                if (inventoryInstance.getCoins() >= cost) {
+                    inventoryInstance.spendCoins(cost);
+
+                    const helper = inventoryInstance.helper;
+                    const durationMs = durationHours * 3600 * 1000;
+                    
+                    const now = Date.now();
+                    if (helper.hiredUntil && now < helper.hiredUntil) {
+                        helper.hiredUntil += durationMs; // Extend existing lease
+                    } else {
+                        helper.hiredUntil = now + durationMs; // Start new lease
+                    }
+
+                    // Save checkbox values
+                    helper.autoCarrot = document.getElementById('helper-auto-carrot').checked;
+                    helper.autoTomato = document.getElementById('helper-auto-tomato').checked;
+                    helper.autoPumpkin = document.getElementById('helper-auto-pumpkin').checked;
+
+                    soundManager.playSFX('coin');
+                    SaveSystem.showToast(`Thuê Nê lộ thành công trong ${durationHours} giờ! 🤖🎉`);
+                    
+                    this.syncHUD();
+                    
+                    if (this.scene) {
+                        SaveSystem.saveGame(this.scene.player, this.scene.farm);
+                    }
+
+                    this.closeHelperModal();
+                } else {
+                    soundManager.playSFX('error');
+                    SaveSystem.showToast(`Bạn không đủ vàng để thuê Nê lộ! 🪙❌`);
+                }
+            });
+        }
+    }
+
+    openHelperModal() {
+        const helperOverlay = document.getElementById('helper-overlay');
+        const coinsIndicator = document.getElementById('helper-player-coins');
+        const statusText = document.getElementById('helper-status-text');
+        const btnHire = document.getElementById('btn-helper-hire');
+        const btnSaveSettings = document.getElementById('btn-helper-save-settings');
+        
+        const autoCarrotChk = document.getElementById('helper-auto-carrot');
+        const autoTomatoChk = document.getElementById('helper-auto-tomato');
+        const autoPumpkinChk = document.getElementById('helper-auto-pumpkin');
+
+        if (!helperOverlay || !coinsIndicator || !statusText || !btnHire) return;
+
+        coinsIndicator.innerText = inventoryInstance.getCoins();
+
+        // Load config from inventory helper state
+        const helper = inventoryInstance.helper;
+        autoCarrotChk.checked = helper.autoCarrot;
+        autoTomatoChk.checked = helper.autoTomato;
+        autoPumpkinChk.checked = helper.autoPumpkin;
+
+        const updateStatusUI = () => {
+            const now = Date.now();
+            if (helper.hiredUntil && now < helper.hiredUntil) {
+                const diffMs = helper.hiredUntil - now;
+                const hours = Math.floor(diffMs / 3600000);
+                const minutes = Math.floor((diffMs % 3600000) / 60000);
+                const seconds = Math.floor((diffMs % 60000) / 1000);
+                statusText.innerHTML = `Đang làm việc (Còn ${hours}h ${minutes}m ${seconds}s) 🟢`;
+                statusText.style.color = '#4ade80';
+                btnHire.innerText = 'GIA HẠN THUÊ 🪙';
+                if (btnSaveSettings) btnSaveSettings.classList.remove('hidden');
+            } else {
+                statusText.innerHTML = 'Chưa được thuê 🔴';
+                statusText.style.color = '#f87171';
+                btnHire.innerText = 'THUÊ NGƯỜI LÀM 🪙';
+                if (btnSaveSettings) btnSaveSettings.classList.add('hidden');
+            }
+        };
+
+        updateStatusUI();
+
+        // Keep updating status text while open
+        if (this.helperStatusInterval) clearInterval(this.helperStatusInterval);
+        this.helperStatusInterval = setInterval(updateStatusUI, 1000);
+
+        // Close other overlays
+        const overlayIds = ['inventory-overlay', 'shop-overlay', 'sell-overlay', 'auth-overlay', 'lottery-overlay', 'guide-overlay', 'subsidy-overlay'];
+        overlayIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        });
+        this.closeInventory();
+
+        helperOverlay.classList.remove('hidden');
+        if (this.scene && this.scene.input && this.scene.input.keyboard) {
+            this.scene.input.keyboard.enabled = false;
+        }
+    }
+
+    closeHelperModal() {
+        const helperOverlay = document.getElementById('helper-overlay');
+        if (helperOverlay) helperOverlay.classList.add('hidden');
+        if (this.helperStatusInterval) {
+            clearInterval(this.helperStatusInterval);
+            this.helperStatusInterval = null;
+        }
+        if (window._phaserScene && window._phaserScene.input && window._phaserScene.input.keyboard) {
+            window._phaserScene.input.keyboard.enabled = true;
+        }
     }
 
     // --- HUD LOGIC ---
@@ -263,7 +506,7 @@ export class UIController {
             const activeSlot = inventoryInstance.getActiveSlot();
             if (activeSlot === 'water_can') {
                 const waterAmt = inventoryInstance.getWaterAmount();
-                this.hudToolName.innerText = `Bình tưới (${waterAmt}/3 giọt)`;
+                this.hudToolName.innerText = `Bình tưới (${waterAmt}/30 giọt)`;
             } else {
                 const activeCrop = CROPS[activeSlot];
                 const activeQty = inventoryInstance.getItemQty(`${activeSlot}_seed`);

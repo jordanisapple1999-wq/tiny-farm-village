@@ -25,6 +25,13 @@ export class Inventory {
         // Active hotbar slot: 'carrot', 'tomato', 'pumpkin', 'water_can'
         this.activeHotbarSlot = 'carrot';
 
+        this.helper = {
+            hiredUntil: null,
+            autoCarrot: false,
+            autoTomato: false,
+            autoPumpkin: false
+        };
+
         this.lastAllowanceTime = Date.now();
 
         // Check active allowance every 10 seconds (ticks for minute boundary)
@@ -111,7 +118,7 @@ export class Inventory {
     }
 
     refillWater() {
-        this.waterAmount = 3;
+        this.waterAmount = Math.min(30, (this.waterAmount || 0) + 10);
         this.triggerUpdate();
     }
 
@@ -198,7 +205,9 @@ export class Inventory {
 
             // Notify user of offline earnings after a short delay
             setTimeout(() => {
-                if (window.SaveSystem) {
+                if (window._uiController && typeof window._uiController.showOfflineSubsidyModal === 'function') {
+                    window._uiController.showOfflineSubsidyModal(totalGranted, diffMinutes);
+                } else if (window.SaveSystem) {
                     window.SaveSystem.showToast(`Chào mừng trở lại! Bạn nhận được 🪙${totalGranted} vàng trợ cấp tích lũy trong ${diffMinutes} phút ngoại tuyến! 💤`, 5000);
                 }
                 if (typeof window.showCoinsAllowanceFloat === 'function') {
@@ -262,7 +271,8 @@ export class Inventory {
             selectedSeed: this.selectedSeed,
             waterAmount: this.waterAmount,
             activeHotbarSlot: this.activeHotbarSlot,
-            lastAllowanceTime: this.lastAllowanceTime
+            lastAllowanceTime: this.lastAllowanceTime,
+            helper: this.helper
         };
     }
 
@@ -278,6 +288,10 @@ export class Inventory {
             this.lastAllowanceTime = data.lastAllowanceTime;
         } else {
             this.lastAllowanceTime = Date.now();
+        }
+
+        if (data.helper) {
+            this.helper = { ...this.helper, ...data.helper };
         }
 
         // Run offline check immediately on load

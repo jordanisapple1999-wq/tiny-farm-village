@@ -372,6 +372,13 @@ class MainScene extends Phaser.Scene {
             callback: () => SaveSystem.saveGame(this.player, this.farm),
             loop: true
         });
+
+        // ── 15. Helper Auto-farming loop (runs every 1.5 seconds) ──
+        this.time.addEvent({
+            delay: 1500,
+            callback: () => this.runHelperAutomation(),
+            loop: true
+        });
     }
 
     update() {
@@ -381,6 +388,13 @@ class MainScene extends Phaser.Scene {
 
         // Depth-sort player vs world objects each frame (Y-sorting)
         this.player.setDepth(this.player.y);
+
+        // Update NPCs (handles movement tracking of name tags/speech bubbles)
+        if (this.npcs) {
+            this.npcs.forEach(npc => {
+                if (npc && npc.update) npc.update();
+            });
+        }
     }
 
     createDecorations() {
@@ -500,12 +514,12 @@ class MainScene extends Phaser.Scene {
             this.selectorGraphic.setPosition(playerGridX * 32, playerGridY * 32);
             this.selectorGraphic.setVisible(true);
             const waterAmt = inventoryInstance.getWaterAmount();
-            if (waterAmt < 3) {
+            if (waterAmt < 30) {
                 this.ui.showPrompt(`múc nước vào Bình tưới 💧`, true);
                 if (Phaser.Input.Keyboard.JustDown(this.keyE)) {
                     inventoryInstance.refillWater();
                     soundManager.playSFX('water');
-                    SaveSystem.showToast("Đã múc đầy nước vào bình tưới! 💧");
+                    SaveSystem.showToast(`Múc nước thành công! Bình tưới: 💧 ${inventoryInstance.getWaterAmount()}/30`);
                 }
             } else {
                 this.ui.showPrompt(`Bình tưới đã đầy nước 💧`, false);
@@ -515,7 +529,24 @@ class MainScene extends Phaser.Scene {
 
         // 3. Farm plot check
         const target = this.player.getFacingGridPos();
-        const plot = this.farm.getPlotAt(target.gridX, target.gridY);
+        let plot = this.farm.getPlotAt(target.gridX, target.gridY);
+
+        if (!plot || plot.locked) {
+            let nearestPlot = null;
+            let minDist = 64;
+            const px = this.player.x;
+            const py = this.player.y + 8;
+            this.farm.plots.forEach(p => {
+                if (p.locked) return;
+                const dist = Phaser.Math.Distance.Between(px, py, p.pixelX + 16, p.pixelY + 16);
+                if (dist < minDist) {
+                    minDist = dist;
+                    nearestPlot = p;
+                }
+            });
+            if (nearestPlot) plot = nearestPlot;
+        }
+
         if (plot) {
             this.selectorGraphic.setPosition(plot.pixelX, plot.pixelY);
             this.selectorGraphic.setVisible(true);
@@ -647,17 +678,34 @@ class MainScene extends Phaser.Scene {
         // 1. If near water and holding watering can, refill!
         if (isNearWater && activeSlot === 'water_can') {
             const waterAmt = inventoryInstance.getWaterAmount();
-            if (waterAmt < 3) {
+            if (waterAmt < 30) {
                 inventoryInstance.refillWater();
                 soundManager.playSFX('water');
-                SaveSystem.showToast("Đã múc đầy nước vào bình tưới! 💧");
+                SaveSystem.showToast(`Múc nước thành công! Bình tưới: 💧 ${inventoryInstance.getWaterAmount()}/30`);
             }
             return;
         }
 
         // 2. Interacting with farm plot
         const target = this.player.getFacingGridPos();
-        const plot = this.farm.getPlotAt(target.gridX, target.gridY);
+        let plot = this.farm.getPlotAt(target.gridX, target.gridY);
+
+        if (!plot || plot.locked) {
+            let nearestPlot = null;
+            let minDist = 64;
+            const px = this.player.x;
+            const py = this.player.y + 8;
+            this.farm.plots.forEach(p => {
+                if (p.locked) return;
+                const dist = Phaser.Math.Distance.Between(px, py, p.pixelX + 16, p.pixelY + 16);
+                if (dist < minDist) {
+                    minDist = dist;
+                    nearestPlot = p;
+                }
+            });
+            if (nearestPlot) plot = nearestPlot;
+        }
+
         if (plot && !plot.locked) {
             if (plot.cropId === null) {
                 if (activeSlot !== 'water_can') {
@@ -679,6 +727,79 @@ class MainScene extends Phaser.Scene {
                 }
             }
         }
+    }
+
+    runHelperAutomation() {
+        const helperState = inventoryInstance.helper;
+        if (!helperState || !helperState.hiredUntil || Date.now() >= helperState.hiredUntil) {
+            // Helper not hired or contract expired
+            if (helperState && helperState.hiredUntil && Date.now() >= helperState.hiredUntil) {
+                helperState.hiredUntil = null;
+                inventoryInstance.triggerUpdate();
+                SaveSystem.showToast("Hợp đồng thuê Nê lộ đã hết hạn! 🤖");
+                SaveSystem.saveGame(this.player, this.farm);
+            }
+            return;
+        }
+
+        // Find Nê Lộ NPC
+        const helperNPC = this.npcs.find(n => n.type === 'helper');
+        if (!helperNPC) return;
+
+        // If Nê Lộ is busy (not idle), don't trigger new actions
+        if (helperNPC.state !== 'idle') return;
+
+        // Find next task
+        const nextTask = this.findNextHelperTask();
+        if (nextTask) {
+            helperNPC.executeTask(nextTask);
+        }
+    }
+
+    findNextHelperTask() {
+        const helperState = inventoryInstance.helper;
+        if (!helperState || !helperState.hiredUntil || Date.now() >= helperState.hiredUntil) {
+            return null;
+        }
+
+        // Find enabled crops config
+        const enabledCrops = [];
+        if (helperState.autoCarrot) enabledCrops.push('carrot');
+        if (helperState.autoTomato) enabledCrops.push('tomato');
+        if (helperState.autoPumpkin) enabledCrops.push('pumpkin');
+
+        for (const plot of this.farm.plots) {
+            if (plot.locked) continue;
+
+            // 1. Harvest task
+            if (plot.cropId !== null && plot.stage === 4 && !plot.isDead) {
+                return { plot, action: 'harvest' };
+            }
+            // 2. Water task
+            if (plot.cropId !== null && !plot.watered && !plot.isDead) {
+                return { plot, action: 'water' };
+            }
+            // 3. Plant task
+            if (plot.cropId === null && enabledCrops.length > 0) {
+                for (const cropId of enabledCrops) {
+                    const seedKey = `${cropId}_seed`;
+                    const qty = inventoryInstance.getItemQty(seedKey);
+                    if (qty > 0) {
+                        return { plot, action: 'plant', cropId };
+                    } else {
+                        // Check if we can buy
+                        const cost = CROPS[cropId].seedCost;
+                        if (inventoryInstance.getCoins() >= cost) {
+                            inventoryInstance.spendCoins(cost);
+                            inventoryInstance.addItem(seedKey, 1);
+                            this.ui.syncHUD();
+                            return { plot, action: 'plant', cropId };
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 }
 

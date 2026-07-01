@@ -156,7 +156,7 @@ export class ShopController {
                     <span class="shop-item-icon">${crop.icon}</span>
                     <div class="shop-item-details">
                         <span class="shop-item-name">Hạt giống ${crop.name}</span>
-                        <span class="shop-item-sub">Thu hoạch sau: ${crop.growTime} giây | Bán lại: <span class="gold-coin-icon"></span>${crop.sellPrice}</span>
+                        <span class="shop-item-sub">Thu hoạch sau: ${crop.growTime} giây</span>
                         <span class="shop-item-owned">Đang có trong túi: <strong>${ownedQty}</strong> hạt</span>
                     </div>
                 </div>

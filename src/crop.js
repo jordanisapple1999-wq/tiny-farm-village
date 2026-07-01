@@ -6,7 +6,7 @@ export const CROPS = {
         name: 'Cà rốt',
         englishName: 'Carrot',
         seedCost: 5,
-        growTime: 10, // seconds
+        growTime: 45, // seconds
         sellPrice: 12,
         icon: '🥕',
         growthStages: [
@@ -26,7 +26,7 @@ export const CROPS = {
         name: 'Cà chua',
         englishName: 'Tomato',
         seedCost: 10,
-        growTime: 20, // seconds
+        growTime: 70, // seconds
         sellPrice: 25,
         icon: '🍅',
         growthStages: [
@@ -46,7 +46,7 @@ export const CROPS = {
         name: 'Bí ngô',
         englishName: 'Pumpkin',
         seedCost: 20,
-        growTime: 35, // seconds
+        growTime: 90, // seconds
         sellPrice: 55,
         icon: '🎃',
         growthStages: [

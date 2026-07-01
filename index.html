@@ -159,6 +159,10 @@
                 <span class="hud-panel-label">Công cụ:</span>
                 <span id="hud-selected-tool-name">Gieo hạt Cà rốt</span>
             </div>
+            <div class="hud-item-panel hidden" id="hud-helper-panel" style="border-left: 3px solid #3b82f6;">
+                <span class="hud-panel-label" style="color: #60a5fa;">🤖 Nê lộ:</span>
+                <span id="hud-helper-timer" style="color: #4ade80; font-weight: 800;">00:00:00</span>
+            </div>
         </div>
 
         <div class="hud-right">
@@ -197,6 +201,7 @@
                 <p id="dialogue-text"></p>
             </div>
             <div class="dialogue-footer">
+                <button id="btn-dialogue-skip"  class="cozy-btn secondary">Bỏ qua ⏩</button>
                 <button id="btn-dialogue-next"  class="cozy-btn">Tiếp theo ➜</button>
                 <button id="btn-dialogue-close" class="cozy-btn secondary">Đóng ✕</button>
             </div>
@@ -342,6 +347,98 @@
                 </div>
             </div>
             <button id="btn-guide-start-playing" class="start-game-btn">TÔI ĐÃ HIỂU! BẮT ĐẦU CHƠI 🌾</button>
+        </div>
+    </div>
+
+    <!-- ── SUBSIDY OVERLAY ── -->
+    <div id="subsidy-overlay" class="ui-panel-overlay hidden">
+        <div class="cozy-panel guide-box">
+            <button class="btn-close-panel" id="btn-close-subsidy">✕</button>
+            <div class="panel-header">
+                <h2>🎁 TRỢ CẤP NGOẠI TUYẾN 💤</h2>
+            </div>
+            <div class="guide-scrollable-content">
+                <div class="guide-section" style="text-align: center; padding: 24px 16px;">
+                    <div style="font-size: 3.5rem; margin-bottom: 16px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); animation: promptFloat 2s ease-in-out infinite alternate;">🪙</div>
+                    <h3 style="font-size: 1.3rem; color: #ffd875; margin-bottom: 12px; font-family: var(--font-heading);">Chào mừng trở lại!</h3>
+                    <p style="font-size: 1.05rem; line-height: 1.6; color: #fff6eb;">
+                        Bạn nhận được <strong id="subsidy-amount" style="color: var(--gold-light); font-size: 1.25rem;">0</strong> vàng trợ cấp tích lũy trong <strong id="subsidy-time" style="color: #60a5fa;">0</strong> phút ngoại tuyến!
+                    </p>
+                </div>
+            </div>
+            <button id="btn-subsidy-confirm" class="start-game-btn">NHẬN VÀ BẮT ĐẦU 🌾 (10s)</button>
+        </div>
+    </div>
+
+    <!-- ── HELPER OVERLAY ── -->
+    <div id="helper-overlay" class="ui-panel-overlay hidden">
+        <div class="cozy-panel shop-box">
+            <div class="panel-header">
+                <h2>🤖 Thuê Người Giúp Việc "Nê Lộ"</h2>
+                <button class="btn-close-panel" id="btn-close-helper">✕</button>
+            </div>
+            <div class="shop-content-wrapper">
+                <div class="npc-shop-intro">
+                    <div class="dialogue-avatar">🤖</div>
+                    <div class="shop-speech-bubble">"Chủ nhân muốn thuê tôi trong bao lâu? Tôi sẽ tự động trồng trọt, tưới nước, và thu hoạch cho các khu đất đã khai hoang!"</div>
+                </div>
+                
+                <!-- Status Row -->
+                <div id="helper-status-card" class="guide-section" style="padding: 10px 14px; margin-bottom: 5px;">
+                    <div style="font-weight: 800; color: #ffd875; display: flex; justify-content: space-between;">
+                        <span>Trạng thái:</span>
+                        <span id="helper-status-text" style="color: #4ade80;">Chưa được thuê 🔴</span>
+                    </div>
+                </div>
+
+                <!-- Duration Selection -->
+                <div class="guide-section">
+                    <h3 style="margin-bottom: 10px;">🕒 1. Chọn thời gian thuê</h3>
+                    <div style="display: flex; gap: 8px; flex-direction: column;">
+                        <label class="cozy-radio-label" style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #fff6eb;">
+                            <input type="radio" name="helper-duration" value="1" checked style="accent-color: var(--wood-accent); scale: 1.2;">
+                            <span>1 Giờ — <strong style="color: var(--gold-light);">🪙 500</strong> vàng</span>
+                        </label>
+                        <label class="cozy-radio-label" style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #fff6eb;">
+                            <input type="radio" name="helper-duration" value="3" style="accent-color: var(--wood-accent); scale: 1.2;">
+                            <span>3 Giờ — <strong style="color: var(--gold-light);">🪙 1250</strong> vàng (Tiết kiệm 250)</span>
+                        </label>
+                        <label class="cozy-radio-label" style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #fff6eb;">
+                            <input type="radio" name="helper-duration" value="10" style="accent-color: var(--wood-accent); scale: 1.2;">
+                            <span>10 Giờ — <strong style="color: var(--gold-light);">🪙 4000</strong> vàng (Tiết kiệm 1000)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Crop Selection -->
+                <div class="guide-section">
+                    <h3 style="margin-bottom: 10px;">🌱 2. Chọn hạt giống tự động trồng</h3>
+                    <p style="font-size: 0.8rem; opacity: 0.8; margin-bottom: 8px;">Nê lộ sẽ tự mua hạt giống bằng tiền của bạn nếu trong túi hết hạt giống.</p>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #fff6eb;">
+                            <input type="checkbox" id="helper-auto-carrot" style="accent-color: var(--wood-accent); scale: 1.2;">
+                            <span>Tự trồng Cà rốt 🥕 (Mua hạt: 🪙5)</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #fff6eb;">
+                            <input type="checkbox" id="helper-auto-tomato" style="accent-color: var(--wood-accent); scale: 1.2;">
+                            <span>Tự trồng Cà chua 🍅 (Mua hạt: 🪙10)</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #fff6eb;">
+                            <input type="checkbox" id="helper-auto-pumpkin" style="accent-color: var(--wood-accent); scale: 1.2;">
+                            <span>Tự trồng Bí ngô 🎃 (Mua hạt: 🪙20)</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="panel-footer flex-footer">
+                <div class="player-coins-indicator">
+                    Tiền của bạn: <span class="gold-coin-icon"></span> <span id="helper-player-coins">0</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button id="btn-helper-save-settings" class="cozy-btn secondary hidden" style="justify-content: center;">CẬP NHẬT CÀI ĐẶT ⚙️</button>
+                    <button id="btn-helper-hire" class="cozy-btn green-btn" style="min-width: 150px; justify-content: center;">THUÊ NGƯỜI LÀM 🪙</button>
+                </div>
+            </div>
         </div>
     </div>
 

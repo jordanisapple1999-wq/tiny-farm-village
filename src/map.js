@@ -15,6 +15,7 @@ export class MapManager {
         scene.load.image('img_fence',       'assets/objects/fence.png');
         scene.load.image('img_seller',      'assets/npc/seller.png');
         scene.load.image('img_buyer',       'assets/npc/buyer.png');
+        scene.load.image('img_helper',      'assets/npc/helper.png?v=' + Date.now());
         scene.load.image('img_stall_lottery', 'assets/objects/stall_lottery.png?v=' + Date.now());
         scene.load.image('img_lottery',       'assets/npc/lottery.png?v=' + Date.now());
 
@@ -75,7 +76,7 @@ export class MapManager {
         });
 
         // Canvas fallback NPC sprites (used if image failed)
-        ['seller', 'buyer', 'lottery'].forEach(type => {
+        ['seller', 'buyer', 'lottery', 'helper'].forEach(type => {
             const key = `char_${type}_canvas`;
             const canvas = document.createElement('canvas');
             canvas.width = canvas.height = 32;
@@ -653,6 +654,29 @@ export class MapManager {
             ctx.fillRect(11, 6, 10, 1); // hat band
 
             // 6. Draw Boots
+            ctx.fillStyle = boots;
+            ctx.fillRect(10, 26, 3, 3);
+            ctx.fillRect(19, 26, 3, 3);
+        } else if (type === 'helper') {
+            // Draw Nê lộ helper
+            const skin = '#fed7aa';
+            const clothes = '#f97316'; // orange coat/shirt
+            const overalls = '#4b5563'; // gray overalls
+            const cap = '#3b82f6'; // blue cap
+            const boots = '#1a0c00';
+
+            ctx.fillStyle = clothes;
+            ctx.fillRect(10, 16, 12, 10);
+            ctx.fillStyle = overalls;
+            ctx.fillRect(12, 18, 8, 8);
+            ctx.fillStyle = skin;
+            ctx.fillRect(12, 8, 8, 8);
+            ctx.fillStyle = cap;
+            ctx.fillRect(10, 6, 12, 3);
+            ctx.fillRect(12, 4, 8, 2);
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(13, 10, 1, 1);
+            ctx.fillRect(18, 10, 1, 1);
             ctx.fillStyle = boots;
             ctx.fillRect(10, 26, 3, 3);
             ctx.fillRect(19, 26, 3, 3);

@@ -56,7 +56,7 @@ export class FarmPlot {
         this.lockIcon.setVisible(this.locked);
     }
 
-    plant(cropId) {
+    plant(cropId, isAuto = false) {
         if (this.cropId !== null) return false;
 
         const seedKey = `${cropId}_seed`;
@@ -75,16 +75,22 @@ export class FarmPlot {
             
             this.updateVisual();
             soundManager.playSFX('plant');
-            SaveSystem.showToast(`Đã gieo Hạt giống ${CROPS[cropId].name}! Hãy tưới nước ngay! 💧`);
+            if (!isAuto) {
+                SaveSystem.showToast(`Đã gieo Hạt giống ${CROPS[cropId].name}! Hãy tưới nước ngay! 💧`);
+            } else {
+                this._spawnFloatText(`🌱 ${CROPS[cropId].icon}`);
+            }
             return true;
         } else {
-            soundManager.playSFX('error');
-            SaveSystem.showToast(`Bạn không có hạt giống ${CROPS[cropId].name} để gieo! ❌`);
+            if (!isAuto) {
+                soundManager.playSFX('error');
+                SaveSystem.showToast(`Bạn không có hạt giống ${CROPS[cropId].name} để gieo! ❌`);
+            }
             return false;
         }
     }
 
-    water() {
+    water(isAuto = false) {
         if (this.cropId === null || this.isDead || this.watered) return false;
 
         this.watered = true;
@@ -93,11 +99,15 @@ export class FarmPlot {
         
         this.updateVisual();
         soundManager.playSFX('water');
-        SaveSystem.showToast(`Đã tưới nước cho ${CROPS[this.cropId].name}! Cây bắt đầu lớn 🌱`);
+        if (!isAuto) {
+            SaveSystem.showToast(`Đã tưới nước cho ${CROPS[this.cropId].name}! Cây bắt đầu lớn 🌱`);
+        } else {
+            this._spawnFloatText(`💧`);
+        }
         return true;
     }
 
-    harvest() {
+    harvest(isAuto = false) {
         if (this.cropId === null || this.stage !== 4 || this.isDead) return false;
 
         const crop = CROPS[this.cropId];
@@ -106,10 +116,12 @@ export class FarmPlot {
             const cropKey = `${this.cropId}_harvested`;
             inventoryInstance.addItem(cropKey, 1);
             soundManager.playSFX('harvest');
-            SaveSystem.showToast(`Thu hoạch: ${crop.icon} ${crop.name}! +1`);
+            if (!isAuto) {
+                SaveSystem.showToast(`Thu hoạch: ${crop.icon} ${crop.name}! +1`);
+            }
 
             // Floating reward text at the plot
-            this._spawnFloatText(crop.icon + ' +1');
+            this._spawnFloatText(isAuto ? `🤖 ${crop.icon} +1` : `${crop.icon} +1`);
 
             // Reset plot
             this.cropId = null;
